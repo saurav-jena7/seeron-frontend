@@ -1,7 +1,7 @@
 'use client';
 import { Menu, LogOut, User, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getUser, clearAuth } from '@/lib/auth';
+import { getAuthContext, clearAuth } from '@/lib/auth';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
@@ -14,7 +14,8 @@ interface TopbarProps {
 
 export default function Topbar({ onMenuClick, title }: TopbarProps) {
   const router = useRouter();
-  const user = getUser();
+  const ctx  = getAuthContext();
+  const user = ctx?.user;
   const [dropOpen, setDropOpen] = useState(false);
 
   async function handleLogout() {
