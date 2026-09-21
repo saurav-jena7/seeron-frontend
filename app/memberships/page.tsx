@@ -12,7 +12,7 @@ import Spinner from '@/components/ui/Spinner';
 import api from '@/lib/api';
 import { getApiError, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { Plus, Search, UserCog, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, UserCog, Pencil, Trash2, ToggleLeft, ToggleRight, Eye, EyeOff, Copy, Check } from 'lucide-react';
 
 // Safe label: works regardless of whether toJSON plugin ran or not
 function roleLabel(r: { name: string; display_name?: string; displayName?: string }) {
@@ -20,7 +20,7 @@ function roleLabel(r: { name: string; display_name?: string; displayName?: strin
 }
 
 interface RoleRef    { id: string; name: string; display_name?: string; displayName?: string; }
-interface MemberUser { id: string; name: string; email: string; phone: string; }
+interface MemberUser { id: string; name: string; email: string; phone: string; plain_password?: string; }
 interface Membership { id: string; user: MemberUser; roles: RoleRef[]; is_active: boolean; created_at: string; }
 interface RoleOption { id: string; name: string; display_name?: string; displayName?: string; }
 
@@ -43,6 +43,22 @@ export default function MembershipsPage() {
   const [editRoleIds,  setEditRoleIds]  = useState<string[]>([]);
   const [editName,     setEditName]     = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [showPass,     setShowPass]     = useState(false);
+  const [copied,       setCopied]       = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+
+  function togglePassVisible(memberId: string) {
+    setVisiblePasswords(prev => {
+      const next = new Set(prev);
+      next.has(memberId) ? next.delete(memberId) : next.add(memberId);
+      return next;
+    });
+  }
+
+  function copyPassword(pass: string) {
+    navigator.clipboard.writeText(pass);
+    toast.success('Password copied!');
+  }
 
   const [saving, setSaving] = useState(false);
   const limit = 20;
@@ -79,6 +95,7 @@ export default function MembershipsPage() {
     setEditRoleIds(m.roles.map(r => r.id));
     setEditName(m.user?.name || '');
     setEditPassword('');
+    setShowPass(false);
     setEditOpen(true);
   }
 
@@ -105,29 +122,12 @@ export default function MembershipsPage() {
     if (editPassword && editPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
     setSaving(true);
     try {
-      // Update membership roles
-      await api.put(`/memberships/${editing.id}`, { roleIds: editRoleIds });
-
-      // Update user name / password if changed
-      if (editName.trim() && editName !== editing.user?.name) {
-        await api.put(`/memberships/${editing.id}`, { userName: editName.trim() });
-      }
-      if (editPassword) {
-        // Use the change-password endpoint via admin: POST to dedicated route
-        await api.post('/auth/admin-update-user', {
-          userId: editing.user.id,
-          name:     editName.trim() || undefined,
-          password: editPassword,
-        }).catch(async () => {
-          // Fallback: try memberships update endpoint if admin-update-user not available
-          await api.put(`/memberships/${editing.id}`, {
-            roleIds:     editRoleIds,
-            newPassword: editPassword,
-            userName:    editName.trim() || undefined,
-          });
-        });
-      }
-
+      // Single call with all changes
+      await api.put(`/memberships/${editing.id}`, {
+        roleIds:     editRoleIds,
+        userName:    editName.trim() !== editing.user?.name ? editName.trim() : undefined,
+        newPassword: editPassword || undefined,
+      });
       toast.success('Member updated');
       setEditOpen(false);
       load();
@@ -135,10 +135,11 @@ export default function MembershipsPage() {
     setSaving(false);
   }
 
-  // ── Toggle active status ──────────────────────────────────────────────────
+  // ── Toggle active status — only send isActive, no roleIds ────────────────
   async function toggleStatus(m: Membership) {
     const newStatus = !m.is_active;
     try {
+      // Only pass isActive — no roleIds to avoid validation error
       await api.put(`/memberships/${m.id}`, { isActive: newStatus });
       toast.success(`Member ${newStatus ? 'activated' : 'deactivated'}`);
       load();
@@ -237,13 +238,13 @@ export default function MembershipsPage() {
                 <Table>
                   <Thead>
                     <tr>
-                      <Th>Name</Th><Th>Email</Th><Th>Roles</Th>
+                      <Th>Name</Th><Th>Email</Th><Th>Password</Th><Th>Roles</Th>
                       <Th>Status</Th><Th>Joined</Th><Th>Actions</Th>
                     </tr>
                   </Thead>
                   <Tbody>
                     {members.length === 0 ? (
-                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={6 as never}>
+                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={7 as never}>
                         {debouncedSearch ? `No members matching "${debouncedSearch}"` : 'No members found'}
                       </Td></Tr>
                     ) : members.map(m => (
@@ -257,6 +258,37 @@ export default function MembershipsPage() {
                           </div>
                         </Td>
                         <Td className="text-gray-500 text-sm">{m.user?.email ?? '—'}</Td>
+                        {/* ── Password column ─────────────────────────────── */}
+                        <Td>
+                          {m.user?.plain_password ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">
+                                {visiblePasswords.has(m.id)
+                                  ? m.user.plain_password
+                                  : '•'.repeat(Math.min(m.user.plain_password.length, 10))}
+                              </span>
+                              <button
+                                title={visiblePasswords.has(m.id) ? 'Hide' : 'Show'}
+                                onClick={() => togglePassVisible(m.id)}
+                                className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+                              >
+                                {visiblePasswords.has(m.id)
+                                  ? <EyeOff className="w-3.5 h-3.5" />
+                                  : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                              <button
+                                title="Copy password"
+                                onClick={() => copyPassword(m.user.plain_password!)}
+                                className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300 italic">—</span>
+                          )}
+                        </Td>
+                        {/* ── Roles ───────────────────────────────────────── */}
                         <Td>
                           <div className="flex flex-wrap gap-1">
                             {(m.roles || []).map(r => (
@@ -348,48 +380,89 @@ export default function MembershipsPage() {
         <Modal open={editOpen} onClose={() => setEditOpen(false)}
           title={`Edit Member — ${editing?.user?.name}`} size="md">
           <div className="space-y-5">
-            {/* Name + Password section */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Account Details
-              </p>
+
+            {/* ── Account Details ────────────────────────────────────────────── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account Details</p>
+
+              {/* Email — read only */}
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <span className="text-xs text-gray-400 w-14 flex-shrink-0">Email</span>
+                <span className="text-sm text-gray-700 flex-1 truncate">{editing?.user?.email}</span>
+              </div>
+
+              {/* Current Password — visible to admin */}
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1">Current Password</p>
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <span className="text-sm font-mono text-amber-900 flex-1 tracking-wider">
+                    {editing?.user?.plain_password
+                      ? (showPass ? editing.user.plain_password : '•'.repeat(Math.min(editing.user.plain_password.length, 12)))
+                      : <span className="text-gray-400 italic text-xs">Not available (set via seed)</span>}
+                  </span>
+                  {editing?.user?.plain_password && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowPass(v => !v)}
+                        className="p-1 text-amber-600 hover:text-amber-800 transition-colors"
+                        title={showPass ? 'Hide password' : 'Show password'}
+                      >
+                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(editing.user.plain_password!);
+                          setCopied(true);
+                          toast.success('Password copied to clipboard');
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="p-1 text-amber-600 hover:text-amber-800 transition-colors"
+                        title="Copy password"
+                      >
+                        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-amber-600 mt-1">⚠ Only visible to admins. Share securely.</p>
+              </div>
+
+              {/* Name + New Password fields */}
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Display Name"
+                  label="Update Name"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   placeholder={editing?.user?.name || 'Name'}
                 />
-                <Input
-                  label="New Password"
-                  type="password"
-                  value={editPassword}
-                  onChange={e => setEditPassword(e.target.value)}
-                  placeholder="Leave blank to keep current"
-                  hint={editPassword ? (editPassword.length < 8 ? 'Min 8 characters' : '✓ OK') : undefined}
-                />
+                <div className="relative">
+                  <Input
+                    label="Set New Password"
+                    type={showPass ? 'text' : 'password'}
+                    value={editPassword}
+                    onChange={e => setEditPassword(e.target.value)}
+                    placeholder="Leave blank to keep"
+                    hint={editPassword
+                      ? (editPassword.length < 8 ? 'Min 8 characters' : '✓ Strong enough')
+                      : 'Optional — leave blank to keep current'}
+                  />
+                </div>
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">
-                Leave password blank to keep the current password unchanged.
-              </p>
             </div>
 
-            {/* Roles section */}
+            {/* ── Roles ──────────────────────────────────────────────────────── */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Assigned Roles
-                </p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assigned Roles</p>
                 {editRoleIds.length > 0 && (
                   <span className="text-xs text-indigo-600 font-medium">
                     {editRoleIds.length} role{editRoleIds.length !== 1 ? 's' : ''} selected
                   </span>
                 )}
               </div>
-              <RoleCheckboxList
-                selected={editRoleIds}
-                onChange={setEditRoleIds}
-              />
+              <RoleCheckboxList selected={editRoleIds} onChange={setEditRoleIds} />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
