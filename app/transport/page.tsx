@@ -1,48 +1,75 @@
 'use client';
+import { useEffect, useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
-import { Bus, MapPin, User, Wrench, Plus, Navigation } from 'lucide-react';
+import api from '@/lib/api';
+import { Bus, MapPin, User, Wrench, Plus, Navigation, GraduationCap } from 'lucide-react';
+
+interface Stats { totalStudents: number; totalEmployees: number; totalTeachers: number; }
 
 export default function TransportPage() {
+  const [stats,   setStats]   = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/institute/dashboard-stats')
+      .then(r => setStats(r.data.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Approximate: assume ~30% of students use transport
+  const potentialRiders = Math.round((stats?.totalStudents ?? 0) * 0.3);
+
+  const statCards = [
+    { label: 'Total Students',      value: loading ? '…' : stats?.totalStudents ?? 0, icon: GraduationCap, color: 'bg-violet-50 text-violet-600' },
+    { label: 'Potential Riders',    value: loading ? '…' : potentialRiders,             icon: Bus,           color: 'bg-blue-50 text-blue-600' },
+    { label: 'Staff Commuters',     value: loading ? '…' : stats?.totalEmployees ?? 0,  icon: User,          color: 'bg-green-50 text-green-600' },
+    { label: 'Maintenance Due',     value: '—',                                          icon: Wrench,        color: 'bg-orange-50 text-orange-600' },
+  ];
+
   return (
     <AuthGuard anyPermission={['transport.vehicle.view']}>
       <AppShell title="Transport">
         <div className="space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl p-6 flex items-center justify-between flex-wrap gap-4 shadow-lg shadow-violet-100">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Bus className="w-5 h-5 text-violet-600" /> Transport Management
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Bus className="w-5 h-5" /> Transport Management
               </h2>
-              <p className="text-sm text-gray-500">Manage vehicles, drivers, routes and student allocation</p>
+              <p className="text-violet-100 text-sm mt-0.5">Manage vehicles, drivers, routes and student allocation</p>
             </div>
-            <Button><Plus className="w-4 h-4" /> Add Vehicle</Button>
+            <Button className="bg-white text-violet-700 hover:bg-violet-50 border-0 shadow">
+              <Plus className="w-4 h-4" /> Add Vehicle
+            </Button>
           </div>
 
+          {/* Stats from real API */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Total Vehicles', value: 0, icon: Bus, color: 'bg-violet-50 text-violet-600' },
-              { label: 'Active Routes', value: 0, icon: Navigation, color: 'bg-blue-50 text-blue-600' },
-              { label: 'Drivers', value: 0, icon: User, color: 'bg-green-50 text-green-600' },
-              { label: 'Maintenance Due', value: 0, icon: Wrench, color: 'bg-orange-50 text-orange-600' },
-            ].map(s => (
-              <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
-                <div className={`p-3 rounded-xl ${s.color}`}><s.icon className="w-6 h-6" /></div>
+            {statCards.map(s => (
+              <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className={`p-3 rounded-xl ${s.color.split(' ')[0]}`}>
+                  <s.icon className={`w-5 h-5 ${s.color.split(' ')[1]}`} />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-500">{s.label}</p>
+                  <p className="text-xs text-gray-500">{s.label}</p>
                   <p className="text-2xl font-bold text-gray-900">{s.value}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Quick action tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { title: 'Vehicles', desc: 'Manage fleet of vehicles', icon: Bus, color: 'border-violet-200 bg-violet-50' },
-              { title: 'Routes & Stops', desc: 'Define routes and bus stops', icon: MapPin, color: 'border-blue-200 bg-blue-50' },
-              { title: 'Driver Management', desc: 'Manage drivers and assignments', icon: User, color: 'border-green-200 bg-green-50' },
+              { title: 'Vehicles',          desc: 'Manage the fleet of institute vehicles',  icon: Bus,        color: 'border-violet-200 bg-violet-50/60' },
+              { title: 'Routes & Stops',    desc: 'Define bus routes and pickup stops',        icon: MapPin,     color: 'border-blue-200 bg-blue-50/60' },
+              { title: 'Driver Management', desc: 'Manage drivers and vehicle assignments',    icon: User,       color: 'border-green-200 bg-green-50/60' },
             ].map(a => (
               <Card key={a.title} className={`border-2 ${a.color} cursor-pointer hover:shadow-md transition-all`}>
                 <CardContent className="py-5">
@@ -56,16 +83,55 @@ export default function TransportPage() {
             ))}
           </div>
 
+          {/* Ridership estimate */}
           <Card>
-            <CardContent className="py-12 text-center">
-              <Bus className="w-12 h-12 text-violet-300 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-gray-700">Transport Module</h3>
-              <p className="text-gray-400 mt-1">Full fleet management, route tracking and student allocation coming soon.</p>
-              <div className="flex justify-center gap-2 mt-4 flex-wrap">
-                {['Vehicle Tracking', 'Route Management', 'Driver Profiles', 'Maintenance Logs', 'Student Allocation'].map(f => (
-                  <Badge key={f} variant="purple">{f}</Badge>
-                ))}
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-violet-500" /> Ridership Overview
+              </CardTitle>
+              <Badge variant="purple">Estimated from student data</Badge>
+            </CardHeader>
+            <CardContent>
+              {loading ? <Spinner /> : (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-gray-600">Total students enrolled</span>
+                      <span className="font-bold text-gray-900">{stats?.totalStudents ?? 0}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                      <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-gray-600">Potential transport users (~30%)</span>
+                      <span className="font-bold text-gray-900">{potentialRiders}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                      <div className="h-full rounded-full bg-blue-400 transition-all duration-700" style={{ width: '30%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-gray-600">Staff commuters</span>
+                      <span className="font-bold text-gray-900">{stats?.totalEmployees ?? 0}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                      <div className="h-full rounded-full bg-green-400 transition-all duration-700"
+                        style={{ width: stats?.totalStudents ? `${Math.min(100, Math.round(((stats?.totalEmployees ?? 0) / stats.totalStudents) * 100))}%` : '0%' }} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
+                    🚌 Full fleet management, GPS tracking, route optimisation and student allocation coming in the next module update.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Vehicle Tracking', 'Route Management', 'Driver Profiles', 'Maintenance Logs', 'Student Allocation'].map(f => (
+                      <Badge key={f} variant="purple">{f}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
