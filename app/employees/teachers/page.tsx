@@ -14,12 +14,13 @@ import Button from '@/components/ui/Button';
 interface Teacher {
   id: string;
   name: string;
-  employeeCode: string;
-  designation: string;
-  department: string;
-  phone: string;
-  email: string;
-  joiningDate: string;
+  employee_code?: string;
+  designation?: string;
+  department?: string;
+  phone?: string;
+  email?: string;
+  joining_date?: string;
+  created_at?: string;
 }
 
 export default function TeachersPage() {
@@ -82,12 +83,12 @@ export default function TeachersPage() {
                               <div className="font-medium text-gray-900">{t.name}</div>
                             </div>
                           </Td>
-                          <Td className="text-gray-600">{t.employeeCode || '—'}</Td>
+                          <Td className="text-gray-600">{t.employee_code || '—'}</Td>
                           <Td>{t.designation || '—'}</Td>
                           <Td>{t.department || '—'}</Td>
                           <Td>{t.phone || '—'}</Td>
                           <Td className="text-gray-500 text-xs">{t.email || '—'}</Td>
-                          <Td className="text-gray-500">{formatDate(t.joiningDate)}</Td>
+                          <Td className="text-gray-500">{formatDate(t.joining_date || t.created_at)}</Td>
                         </Tr>
                       ))
                     )}
