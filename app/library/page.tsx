@@ -18,7 +18,7 @@ import {
   TrendingUp, GraduationCap, Search, Trash2,
 } from 'lucide-react';
 
-interface LibraryStats { totalStudents: number; totalEmployees: number; totalTeachers: number; }
+interface LibraryStats { totalBooks: number; totalCopies: number; availableCopies: number; issuedCopies: number; }
 interface Book {
   id: string; title: string; author: string;
   isbn?: string; category?: string;
@@ -44,7 +44,7 @@ export default function LibraryPage() {
     setLoading(true);
     try {
       const [sRes, bRes] = await Promise.all([
-        api.get('/institute/dashboard-stats'),
+        api.get('/library/stats').catch(() => ({ data: { data: { totalBooks: 0, totalCopies: 0, availableCopies: 0, issuedCopies: 0 } } })),
         api.get('/library/books').catch(() => ({ data: { data: [] } })),
       ]);
       setStats(sRes.data.data);
@@ -54,10 +54,6 @@ export default function LibraryPage() {
   }
 
   useEffect(() => { loadData(); }, []);
-
-  const totalMembers   = (stats?.totalStudents ?? 0) + (stats?.totalEmployees ?? 0);
-  const studentMembers = stats?.totalStudents  ?? 0;
-  const staffMembers   = stats?.totalEmployees ?? 0;
 
   const filteredBooks = books.filter(b =>
     b.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -118,10 +114,10 @@ export default function LibraryPage() {
           {/* ── Stats ───────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Total Books',      value: loading ? '…' : books.length,                                         icon: BookOpen,      color: 'bg-cyan-50 text-cyan-600' },
-              { label: 'Student Members',  value: loading ? '…' : studentMembers,                                       icon: GraduationCap, color: 'bg-indigo-50 text-indigo-600' },
-              { label: 'Staff Members',    value: loading ? '…' : staffMembers,                                          icon: Users,         color: 'bg-purple-50 text-purple-600' },
-              { label: 'Books Available',  value: loading ? '…' : books.reduce((s, b) => s + (b.available_copies || 0), 0), icon: TrendingUp,   color: 'bg-green-50 text-green-600' },
+              { label: 'Total Books',      value: loading ? '…' : (stats?.totalBooks      ?? 0), icon: BookOpen,      color: 'bg-cyan-50 text-cyan-600' },
+              { label: 'Total Copies',     value: loading ? '…' : (stats?.totalCopies     ?? 0), icon: GraduationCap, color: 'bg-indigo-50 text-indigo-600' },
+              { label: 'Available Copies', value: loading ? '…' : (stats?.availableCopies ?? 0), icon: TrendingUp,    color: 'bg-green-50 text-green-600' },
+              { label: 'Issued Copies',    value: loading ? '…' : (stats?.issuedCopies    ?? 0), icon: Users,         color: 'bg-orange-50 text-orange-600' },
             ].map(s => (
               <div key={s.label} className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className={`p-3 rounded-xl ${s.color.split(' ')[0]}`}>
@@ -134,29 +130,6 @@ export default function LibraryPage() {
               </div>
             ))}
           </div>
-
-          {/* ── Access control info ──────────────────────────────────────────── */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-cyan-500" /> Who can manage library?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                {[
-                  { action: 'Add / Edit / Delete Books', roles: 'Librarian, Institute Admin, Super Admin', color: 'bg-cyan-50 border-cyan-200' },
-                  { action: 'Issue Books to Members',    roles: 'Librarian',                              color: 'bg-orange-50 border-orange-200' },
-                  { action: 'Process Book Returns',      roles: 'Librarian',                              color: 'bg-green-50 border-green-200' },
-                ].map(row => (
-                  <div key={row.action} className={`border rounded-xl p-3 ${row.color}`}>
-                    <p className="font-semibold text-gray-800 text-xs mb-1">{row.action}</p>
-                    <p className="text-gray-500 text-xs">{row.roles}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* ── Books catalogue ──────────────────────────────────────────────── */}
           <Card>
@@ -228,9 +201,9 @@ export default function LibraryPage() {
           {/* ── Quick action tiles ───────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { title: 'Issue a Book',   desc: 'Issue a book to a registered member',    icon: TrendingUp, color: 'border-orange-200 bg-orange-50/60', show: canIssue },
-              { title: 'Return a Book',  desc: 'Process book return and update records',  icon: RefreshCw,  color: 'border-green-200 bg-green-50/60',   show: canReturn },
-              { title: 'All Members',    desc: `${totalMembers} potential library members`, icon: Users,    color: 'border-indigo-200 bg-indigo-50/60', show: true },
+              { title: 'Issue a Book',  desc: 'Issue a book to a registered member',   icon: TrendingUp, color: 'border-orange-200 bg-orange-50/60', show: canIssue },
+              { title: 'Return a Book', desc: 'Process book return and update records', icon: RefreshCw,  color: 'border-green-200 bg-green-50/60',   show: canReturn },
+              { title: 'Catalogue',     desc: `${books.length} book${books.length !== 1 ? 's' : ''} in library`, icon: BookOpen, color: 'border-indigo-200 bg-indigo-50/60', show: true },
             ].filter(a => a.show).map(a => (
               <Card key={a.title} className={`border-2 ${a.color} cursor-pointer hover:shadow-md transition-all`}>
                 <CardContent className="py-5">
