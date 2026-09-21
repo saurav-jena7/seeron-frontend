@@ -31,7 +31,8 @@ export default function RolesPage() {
     setLoading(true);
     try {
       const [rr, pr] = await Promise.all([api.get('/roles'), api.get('/permissions')]);
-      setRoles(rr.data.data);
+      // Filter out SUPER_ADMIN — it is a platform-level flag, not an assignable role
+      setRoles((rr.data.data || []).filter((r: { name: string }) => r.name !== 'SUPER_ADMIN'));
       setAllPerms(pr.data.data);
       setGroupedPerms(pr.data.grouped || {});
     } catch {}

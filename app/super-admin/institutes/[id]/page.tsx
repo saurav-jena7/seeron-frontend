@@ -99,8 +99,9 @@ export default function InstituteDetailPage() {
         api.get('/memberships?limit=100'),
         api.get('/roles'),
       ]);
-      setMembers(mr.data.data || []);
-      setRoles(rr.data.data || []);
+      // Filter out super admin from members list and SUPER_ADMIN from assignable roles
+      setMembers((mr.data.data || []).filter((m: { user?: { is_super_admin?: boolean } }) => !m.user?.is_super_admin));
+      setRoles((rr.data.data || []).filter((r: { name: string }) => r.name !== 'SUPER_ADMIN'));
     } catch {}
     setMembersLoad(false);
   }

@@ -20,7 +20,7 @@ function roleLabel(r: { name: string; display_name?: string; displayName?: strin
 }
 
 interface RoleRef    { id: string; name: string; display_name?: string; displayName?: string; }
-interface MemberUser { id: string; name: string; email: string; phone: string; plain_password?: string; }
+interface MemberUser { id: string; name: string; email: string; phone: string; plain_password?: string; is_active?: boolean; is_super_admin?: boolean; }
 interface Membership { id: string; user: MemberUser; roles: RoleRef[]; is_active: boolean; created_at: string; }
 interface RoleOption { id: string; name: string; display_name?: string; displayName?: string; }
 
@@ -75,15 +75,21 @@ export default function MembershipsPage() {
       const params: Record<string, unknown> = { page, limit };
       if (debouncedSearch) params.search = debouncedSearch;
       const r = await api.get('/memberships', { params });
-      setMembers(r.data.data);
-      setTotal(r.data.meta?.total ?? r.data.data.length);
+      // Filter out super admin — they manage institutes at platform level, not as members
+      const filtered = (r.data.data || []).filter((m: Membership) => !m.user?.is_super_admin);
+      setMembers(filtered);
+      setTotal(filtered.length);
     } catch {}
     setLoading(false);
   }, [page, debouncedSearch]);
 
   useEffect(() => {
     load();
-    api.get('/roles').then(r => setRoles(r.data.data)).catch(() => {});
+    api.get('/roles').then(r => {
+      // Never show SUPER_ADMIN as an assignable role — it's a platform-level flag
+      const filtered = (r.data.data || []).filter((role: { name: string }) => role.name !== 'SUPER_ADMIN');
+      setRoles(filtered);
+    }).catch(() => {});
   }, [load]);
 
   function toggleRole(id: string, arr: string[], setArr: (v: string[]) => void) {
@@ -290,11 +296,17 @@ export default function MembershipsPage() {
                         </Td>
                         {/* ── Roles ───────────────────────────────────────── */}
                         <Td>
-                          <div className="flex flex-wrap gap-1">
-                            {(m.roles || []).map(r => (
-                              <Badge key={r.id} variant={roleVariant(r.name)}>{roleLabel(r)}</Badge>
-                            ))}
-                          </div>
+                          {m.user?.is_super_admin ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">
+                              ⭐ Super Admin
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {(m.roles || []).map(r => (
+                                <Badge key={r.id} variant={roleVariant(r.name)}>{roleLabel(r)}</Badge>
+                              ))}
+                            </div>
+                          )}
                         </Td>
                         <Td>
                           {m.is_active
@@ -303,6 +315,11 @@ export default function MembershipsPage() {
                         </Td>
                         <Td className="text-gray-500 text-sm">{formatDate(m.created_at)}</Td>
                         <Td>
+                          {m.user?.is_super_admin ? (
+                            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg font-medium">
+                              Protected
+                            </span>
+                          ) : (
                           <div className="flex items-center gap-1">
                             <button title="Edit member" onClick={() => openEditModal(m)}
                               className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
@@ -319,6 +336,7 @@ export default function MembershipsPage() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
+                          )}
                         </Td>
                       </Tr>
                     ))}
