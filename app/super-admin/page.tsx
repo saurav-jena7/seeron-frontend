@@ -5,7 +5,6 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
-import Button from '@/components/ui/Button';
 import api from '@/lib/api';
 import { setActiveInstitute, getInstituteId } from '@/lib/auth';
 import { formatDate } from '@/lib/utils';
@@ -90,9 +89,9 @@ export default function SuperAdminPage() {
               </p>
             </div>
             <Link href="/super-admin/institutes/new">
-              <Button className="bg-white text-amber-700 hover:bg-amber-50 border-0 shadow font-semibold">
+              <button className="flex items-center gap-2 bg-white text-amber-700 hover:bg-amber-50 font-semibold text-sm px-4 py-2 rounded-xl shadow transition-colors">
                 <Plus className="w-4 h-4" /> New Institute
-              </Button>
+              </button>
             </Link>
           </div>
 
