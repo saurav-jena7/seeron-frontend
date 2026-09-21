@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -15,7 +15,7 @@ import { getApiError, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { Plus, Search, Pencil, Trash2, GraduationCap, Eye } from 'lucide-react';
 import Link from 'next/link';
-import { getUser } from '@/lib/auth';
+import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 
 interface Student {
   id: string; name: string; admission_no: string; roll_no: string;
@@ -35,8 +35,8 @@ const emptyForm = {
 };
 
 export default function StudentsPage() {
-  const user = getUser();
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const ctx = getAuthContext();
+  const isAdmin = isSuperAdmin(ctx) || hasPermission('academic.create', ctx);
   const [students, setStudents] = useState<Student[]>([]);
   const [total, setTotal] = useState(0);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -223,3 +223,4 @@ export default function StudentsPage() {
     </AuthGuard>
   );
 }
+

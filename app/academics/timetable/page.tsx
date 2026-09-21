@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal';
 import Spinner from '@/components/ui/Spinner';
 import api from '@/lib/api';
 import { getApiError, DAYS } from '@/lib/utils';
-import { getUser } from '@/lib/auth';
+import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Clock } from 'lucide-react';
 
@@ -32,8 +32,8 @@ interface Teacher { id: string; name: string; }
 interface Section { id: string; name: string; class: NamedRef | null; }
 
 export default function TimetablePage() {
-  const user = getUser();
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const ctx = getAuthContext();
+  const isAdmin = isSuperAdmin(ctx) || hasPermission('academic.create', ctx);
   const [entries, setEntries] = useState<TTEntry[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -210,3 +210,4 @@ export default function TimetablePage() {
     </AuthGuard>
   );
 }
+

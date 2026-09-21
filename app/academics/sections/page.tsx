@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -11,7 +11,7 @@ import Modal from '@/components/ui/Modal';
 import Spinner from '@/components/ui/Spinner';
 import api from '@/lib/api';
 import { getApiError } from '@/lib/utils';
-import { getUser } from '@/lib/auth';
+import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
 
@@ -26,8 +26,8 @@ interface Class { id: string; name: string; }
 interface Teacher { id: string; name: string; }
 
 export default function SectionsPage() {
-  const user = getUser();
-  const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
+  const ctx = getAuthContext();
+  const isAdmin = isSuperAdmin(ctx) || hasPermission('academic.create', ctx);
 
   const [sections, setSections] = useState<Section[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -152,3 +152,4 @@ export default function SectionsPage() {
     </AuthGuard>
   );
 }
+
