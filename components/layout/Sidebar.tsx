@@ -54,11 +54,12 @@ const NAV: NavItem[] = [
   // Academics
   { label: 'Academics', icon: BookOpen, anyPerm: ['academic.view'],
     children: [
-      { label: 'Classes',        href: '/academics/classes' },
-      { label: 'Sections',       href: '/academics/sections' },
-      { label: 'Subjects',       href: '/academics/subjects' },
-      { label: 'Timetable',      href: '/academics/timetable' },
-      { label: 'Academic Years', href: '/academics/years' },
+      { label: 'Classes',           href: '/academics/classes' },
+      { label: 'Sections',          href: '/academics/sections' },
+      { label: 'Subjects',          href: '/academics/subjects' },
+      { label: 'Assign to Classes', href: '/academics/class-subjects' },
+      { label: 'Timetable',         href: '/academics/timetable' },
+      { label: 'Academic Years',    href: '/academics/years' },
     ],
   },
 
