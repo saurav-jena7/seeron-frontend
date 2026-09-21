@@ -5,22 +5,8 @@ import api from '@/lib/api';
 import { setAuth, getPostLoginRedirect, AuthContext, clearAuth } from '@/lib/auth';
 import { getApiError } from '@/lib/utils';
 import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
 import toast from 'react-hot-toast';
-import { GraduationCap, Eye, EyeOff, Shield, ArrowRight, Sparkles } from 'lucide-react';
-
-const DEMO = [
-  { label: 'Super Admin',     email: 'admin@seeron.com',          pass: 'Admin@123',    badge: 'bg-amber-100 text-amber-700 border border-amber-200' },
-  { label: 'Inst Admin',      email: 'iadmin@seeron.com',         pass: 'Admin@123',    badge: 'bg-red-100 text-red-700 border border-red-200' },
-  { label: 'Principal',       email: 'principal@seeron.com',      pass: 'Admin@123',    badge: 'bg-purple-100 text-purple-700 border border-purple-200' },
-  { label: 'Teacher',         email: 'john.smith@seeron.com',     pass: 'Teacher@123',  badge: 'bg-blue-100 text-blue-700 border border-blue-200' },
-  { label: 'Accountant',      email: 'accountant@seeron.com',     pass: 'Admin@123',    badge: 'bg-green-100 text-green-700 border border-green-200' },
-  { label: 'HR Manager',      email: 'hr@seeron.com',             pass: 'Admin@123',    badge: 'bg-pink-100 text-pink-700 border border-pink-200' },
-  { label: 'Librarian',       email: 'librarian@seeron.com',      pass: 'Admin@123',    badge: 'bg-cyan-100 text-cyan-700 border border-cyan-200' },
-  { label: 'Hostel Warden',   email: 'hostelwarden@seeron.com',   pass: 'Admin@123',    badge: 'bg-teal-100 text-teal-700 border border-teal-200' },
-  { label: 'Transport Admin', email: 'transport@seeron.com',      pass: 'Admin@123',    badge: 'bg-violet-100 text-violet-700 border border-violet-200' },
-  { label: 'Student',         email: 'alice@seeron.com',          pass: 'Student@123',  badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200' },
-];
+import { GraduationCap, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
 
 const FEATURES = [
   'Multi-role Permission System',
@@ -32,14 +18,13 @@ const FEATURES = [
 ];
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
+  const router   = useRouter();
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
   const [featureIdx, setFeatureIdx] = useState(0);
-  const [showDemo, setShowDemo] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -52,16 +37,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email, password });
-      const {
-        accessToken, refreshToken, user, memberships,
-        currentInstitute, currentMembershipId, currentRoles, currentPermissions,
-      } = data.data;
-      // Clear any stale auth data before storing new context
+      const { accessToken, refreshToken, user, memberships,
+        currentInstitute, currentMembershipId, currentRoles, currentPermissions } = data.data;
       clearAuth();
-      const ctx: AuthContext = {
-        user, memberships, currentInstitute,
-        currentMembershipId, currentRoles, currentPermissions,
-      };
+      const ctx: AuthContext = { user, memberships, currentInstitute, currentMembershipId, currentRoles, currentPermissions };
       setAuth(accessToken, refreshToken, ctx);
       toast.success(`Welcome back, ${user.name}!`);
       router.push(getPostLoginRedirect(ctx));
@@ -76,8 +55,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Animated blobs */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -left-20 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-indigo-300/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
@@ -108,15 +86,13 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Rotating feature pill */}
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-300 flex-shrink-0" />
-            <div className="bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm text-white font-medium transition-all duration-500 min-h-[36px] flex items-center">
+            <div className="bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm text-white font-medium min-h-[36px] flex items-center transition-all duration-500">
               {FEATURES[featureIdx]}
             </div>
           </div>
 
-          {/* Feature grid */}
           <div className="grid grid-cols-2 gap-2">
             {FEATURES.map((f, i) => (
               <div key={f} className={`flex items-center gap-2 text-sm transition-all duration-300 ${i === featureIdx ? 'text-white' : 'text-indigo-300'}`}>
@@ -127,7 +103,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="relative text-indigo-300 text-xs">
           © 2025 Seeron • Multi-tenant Institute Management Platform
         </div>
@@ -146,14 +121,12 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            {/* Card header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
               <h2 className="text-xl font-bold text-white">Welcome back</h2>
               <p className="text-indigo-200 text-sm mt-1">Sign in to continue to your dashboard</p>
             </div>
 
-            {/* Form */}
-            <div className="px-8 py-6">
+            <div className="px-8 py-6 space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
                   label="Email address"
@@ -198,37 +171,11 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-
-              {/* Demo accounts */}
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowDemo(v => !v)}
-                  className="w-full flex items-center justify-between text-sm text-gray-500 hover:text-gray-700 transition-colors py-2 border-t border-gray-100"
-                >
-                  <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Demo accounts</span>
-                  <span className={`transition-transform duration-200 ${showDemo ? 'rotate-180' : ''}`}>▾</span>
-                </button>
-
-                <div className={`overflow-hidden transition-all duration-300 ${showDemo ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="pt-2 grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
-                    {DEMO.map(d => (
-                      <button
-                        key={d.email}
-                        type="button"
-                        onClick={() => { setEmail(d.email); setPassword(d.pass); setShowDemo(false); }}
-                        className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all group text-left"
-                      >
-                        <span className={`font-semibold px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${d.badge}`}>{d.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-4">
-            Secured with JWT authentication & role-based access control
+            Secured with JWT authentication &amp; role-based access control
           </p>
         </div>
       </div>

@@ -63,12 +63,7 @@ const NAV: NavItem[] = [
   },
 
   // Students
-  { label: 'Students', icon: GraduationCap, anyPerm: ['student.view'],
-    children: [
-      { label: 'All Students',   href: '/students' },
-      { label: 'Admit Student',  href: '/students/new' },
-    ],
-  },
+  { label: 'Students', href: '/students', icon: GraduationCap, anyPerm: ['student.view'] },
 
   // Attendance
   { label: 'Attendance', href: '/attendance', icon: ClipboardList,
