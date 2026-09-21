@@ -30,9 +30,9 @@ const NAV: NavItem[] = [
   // always visible after login
   { label: 'Dashboard',      href: '/dashboard',    icon: LayoutDashboard },
 
-  // Institute
-  { label: 'Institute',      href: '/institute',    icon: Building2,
-    anyPerm: ['institute.view', 'institute.update'] },
+  // Institute — only admins can edit; principals/others shouldn't see this in sidebar
+  { label: 'Institute', href: '/institute', icon: Building2,
+    anyPerm: ['institute.update'] },
 
   // Users & Members
   { label: 'Users & Access', icon: UserCog, anyPerm: ['membership.view', 'user.view'],
