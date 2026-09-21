@@ -9,7 +9,7 @@ import {
   ChevronDown, ChevronRight, DollarSign, UserCog, Key,
   BarChart2, BookMarked, Home, Bus,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface NavChild { label: string; href: string; }
 interface NavItem {
@@ -115,10 +115,27 @@ const SUPER_NAV: NavItem[] = [
 interface SidebarProps { open: boolean; onClose: () => void; }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
-  const pathname = usePathname();
-  const ctx = getAuthContext();
-  const isSuper = isSuperAdmin(ctx);
-  const [expanded, setExpanded] = useState<string[]>([]);
+  const pathname  = usePathname();
+  const ctx       = getAuthContext();
+  const isSuper   = isSuperAdmin(ctx);
+
+  // Auto-expand any parent whose child matches the current path
+  const [expanded, setExpanded] = useState<string[]>(() => {
+    const all = [...NAV, ...SUPER_NAV];
+    return all
+      .filter(item => item.children?.some(c => pathname.startsWith(c.href)))
+      .map(item => item.label);
+  });
+
+  // Keep expanded state in sync when pathname changes (e.g. browser back/forward)
+  useEffect(() => {
+    const all = [...NAV, ...SUPER_NAV];
+    const shouldBeOpen = all
+      .filter(item => item.children?.some(c => pathname.startsWith(c.href)))
+      .map(item => item.label);
+    // Only add, never collapse — so user-manually-opened items stay open
+    setExpanded(prev => [...new Set([...prev, ...shouldBeOpen])]);
+  }, [pathname]);
 
   function toggle(label: string) {
     setExpanded(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);

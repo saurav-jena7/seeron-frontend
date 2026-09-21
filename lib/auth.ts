@@ -4,8 +4,8 @@
 
 export interface RoleRef {
   id: string;
-  name: string;       // e.g. "TEACHER"
-  displayName: string;
+  name: string;        // e.g. "TEACHER" — uppercase
+  displayName: string; // e.g. "Teacher" — human readable
 }
 
 export interface InstituteRef {

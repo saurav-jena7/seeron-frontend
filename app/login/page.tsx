@@ -2,7 +2,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { setAuth, getPostLoginRedirect, AuthContext } from '@/lib/auth';
+import { setAuth, getPostLoginRedirect, AuthContext, clearAuth } from '@/lib/auth';
 import { getApiError } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -52,8 +52,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email, password });
-      const { accessToken, refreshToken, user, memberships, currentInstitute, currentMembershipId, currentRoles, currentPermissions } = data.data;
-      const ctx: AuthContext = { user, memberships, currentInstitute, currentMembershipId, currentRoles, currentPermissions };
+      const {
+        accessToken, refreshToken, user, memberships,
+        currentInstitute, currentMembershipId, currentRoles, currentPermissions,
+      } = data.data;
+      // Clear any stale auth data before storing new context
+      clearAuth();
+      const ctx: AuthContext = {
+        user, memberships, currentInstitute,
+        currentMembershipId, currentRoles, currentPermissions,
+      };
       setAuth(accessToken, refreshToken, ctx);
       toast.success(`Welcome back, ${user.name}!`);
       router.push(getPostLoginRedirect(ctx));

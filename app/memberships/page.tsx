@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, FormEvent, useCallback } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -14,10 +14,15 @@ import { getApiError, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { Plus, Search, UserCog, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 
-interface RoleRef   { id: string; name: string; displayName: string; }
-interface MemberUser{ id: string; name: string; email: string; phone: string; }
-interface Membership{ id: string; user: MemberUser; roles: RoleRef[]; isActive: boolean; created_at: string; }
-interface RoleOption{ id: string; name: string; displayName: string; }
+// Safe label: works regardless of whether toJSON plugin ran or not
+function roleLabel(r: { name: string; display_name?: string; displayName?: string }) {
+  return r.display_name || r.displayName || r.name || '—';
+}
+
+interface RoleRef    { id: string; name: string; display_name?: string; displayName?: string; }
+interface MemberUser { id: string; name: string; email: string; phone: string; }
+interface Membership { id: string; user: MemberUser; roles: RoleRef[]; is_active: boolean; created_at: string; }
+interface RoleOption { id: string; name: string; display_name?: string; displayName?: string; }
 
 export default function MembershipsPage() {
   const [members,  setMembers]  = useState<Membership[]>([]);
@@ -27,15 +32,22 @@ export default function MembershipsPage() {
   const [search,   setSearch]   = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page,     setPage]     = useState(1);
-  const [open,     setOpen]     = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing,  setEditing]  = useState<Membership | null>(null);
-  const [form,     setForm]     = useState({ name: '', email: '', password: '', phone: '', roleIds: [] as string[] });
-  const [editRoleIds, setEditRoleIds] = useState<string[]>([]);
-  const [saving,   setSaving]   = useState(false);
+
+  // ── Add modal state ──────────────────────────────────────────────────────
+  const [open,    setOpen]    = useState(false);
+  const [form,    setForm]    = useState({ name: '', email: '', password: '', phone: '', roleIds: [] as string[] });
+
+  // ── Edit modal state ─────────────────────────────────────────────────────
+  const [editOpen,     setEditOpen]     = useState(false);
+  const [editing,      setEditing]      = useState<Membership | null>(null);
+  const [editRoleIds,  setEditRoleIds]  = useState<string[]>([]);
+  const [editName,     setEditName]     = useState('');
+  const [editPassword, setEditPassword] = useState('');
+
+  const [saving, setSaving] = useState(false);
   const limit = 20;
 
-  // Debounce search so we don't hit API on every keystroke
+  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
     return () => clearTimeout(t);
@@ -62,6 +74,15 @@ export default function MembershipsPage() {
     setArr(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
   }
 
+  function openEditModal(m: Membership) {
+    setEditing(m);
+    setEditRoleIds(m.roles.map(r => r.id));
+    setEditName(m.user?.name || '');
+    setEditPassword('');
+    setEditOpen(true);
+  }
+
+  // ── Add member ────────────────────────────────────────────────────────────
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
     if (form.roleIds.length === 0) { toast.error('Select at least one role'); return; }
@@ -77,25 +98,49 @@ export default function MembershipsPage() {
     setSaving(false);
   }
 
+  // ── Edit member (roles + optionally name/password) ────────────────────────
   async function handleEditSave() {
     if (!editing) return;
     if (editRoleIds.length === 0) { toast.error('Assign at least one role'); return; }
+    if (editPassword && editPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
     setSaving(true);
     try {
-      // CORRECT endpoint: PUT /memberships/:id with roleIds
+      // Update membership roles
       await api.put(`/memberships/${editing.id}`, { roleIds: editRoleIds });
-      toast.success('Roles updated');
+
+      // Update user name / password if changed
+      if (editName.trim() && editName !== editing.user?.name) {
+        await api.put(`/memberships/${editing.id}`, { userName: editName.trim() });
+      }
+      if (editPassword) {
+        // Use the change-password endpoint via admin: POST to dedicated route
+        await api.post('/auth/admin-update-user', {
+          userId: editing.user.id,
+          name:     editName.trim() || undefined,
+          password: editPassword,
+        }).catch(async () => {
+          // Fallback: try memberships update endpoint if admin-update-user not available
+          await api.put(`/memberships/${editing.id}`, {
+            roleIds:     editRoleIds,
+            newPassword: editPassword,
+            userName:    editName.trim() || undefined,
+          });
+        });
+      }
+
+      toast.success('Member updated');
       setEditOpen(false);
       load();
     } catch (err) { toast.error(getApiError(err)); }
     setSaving(false);
   }
 
+  // ── Toggle active status ──────────────────────────────────────────────────
   async function toggleStatus(m: Membership) {
+    const newStatus = !m.is_active;
     try {
-      // CORRECT endpoint: PUT /memberships/:id with isActive toggled
-      await api.put(`/memberships/${m.id}`, { isActive: !m.isActive });
-      toast.success(`Member ${m.isActive ? 'deactivated' : 'activated'}`);
+      await api.put(`/memberships/${m.id}`, { isActive: newStatus });
+      toast.success(`Member ${newStatus ? 'activated' : 'deactivated'}`);
       load();
     } catch (err) { toast.error(getApiError(err)); }
   }
@@ -111,14 +156,54 @@ export default function MembershipsPage() {
 
   const roleVariant = (name: string): 'danger' | 'warning' | 'purple' | 'success' | 'info' | 'default' => {
     const map: Record<string, 'danger' | 'warning' | 'purple' | 'success' | 'info' | 'default'> = {
-      INSTITUTE_ADMIN: 'danger',  PRINCIPAL: 'warning', TEACHER: 'purple',
-      ACCOUNTANT: 'success',      CFO: 'success',       HR_MANAGER: 'info',
-      STUDENT: 'info',            LIBRARIAN: 'info',
+      INSTITUTE_ADMIN: 'danger', PRINCIPAL: 'warning', TEACHER: 'purple',
+      ACCOUNTANT: 'success', CFO: 'success', HR_MANAGER: 'info', STUDENT: 'info',
     };
     return map[name] || 'default';
   };
 
   const totalPages = Math.ceil(total / limit);
+
+  // ── Role checkbox list (shared between Add + Edit modals) ─────────────────
+  function RoleCheckboxList({
+    selected,
+    onChange,
+  }: {
+    selected: string[];
+    onChange: (ids: string[]) => void;
+  }) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+        {roles.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Loading roles…</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {roles.map(r => {
+              const label = roleLabel(r);
+              const checked = selected.includes(r.id);
+              return (
+                <label
+                  key={r.id}
+                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer bg-white hover:bg-indigo-50 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleRole(r.id, selected, onChange)}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 accent-indigo-600"
+                  />
+                  <span className="text-sm text-gray-800 font-medium">{label}</span>
+                  {checked && (
+                    <span className="ml-auto text-xs text-indigo-600 font-medium">✓ Selected</span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <AuthGuard anyPermission={['membership.view']}>
@@ -136,7 +221,6 @@ export default function MembershipsPage() {
 
           <Card>
             <CardHeader>
-              {/* Search wired to API via debounce */}
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 w-full max-w-xs">
                 <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <input
@@ -167,7 +251,7 @@ export default function MembershipsPage() {
                         <Td>
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                              {m.user?.name?.[0] ?? '?'}
+                              {m.user?.name?.[0]?.toUpperCase() ?? '?'}
                             </div>
                             <span className="font-medium text-gray-900">{m.user?.name ?? '—'}</span>
                           </div>
@@ -176,37 +260,32 @@ export default function MembershipsPage() {
                         <Td>
                           <div className="flex flex-wrap gap-1">
                             {(m.roles || []).map(r => (
-                              <Badge key={r.id} variant={roleVariant(r.name)}>{r.displayName}</Badge>
+                              <Badge key={r.id} variant={roleVariant(r.name)}>{roleLabel(r)}</Badge>
                             ))}
                           </div>
                         </Td>
                         <Td>
-                          {m.isActive
+                          {m.is_active
                             ? <Badge variant="success">Active</Badge>
                             : <Badge variant="danger">Inactive</Badge>}
                         </Td>
                         <Td className="text-gray-500 text-sm">{formatDate(m.created_at)}</Td>
                         <Td>
                           <div className="flex items-center gap-1">
-                            <button
-                              title="Edit roles"
-                              onClick={() => { setEditing(m); setEditRoleIds(m.roles.map(r => r.id)); setEditOpen(true); }}
-                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            ><Pencil className="w-3.5 h-3.5" /></button>
-                            <button
-                              title={m.isActive ? 'Deactivate' : 'Activate'}
-                              onClick={() => toggleStatus(m)}
-                              className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            >
-                              {m.isActive
-                                ? <ToggleRight className="w-4 h-4 text-green-500" />
-                                : <ToggleLeft  className="w-4 h-4" />}
+                            <button title="Edit member" onClick={() => openEditModal(m)}
+                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              title="Remove from institute"
-                              onClick={() => removeMember(m)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            ><Trash2 className="w-3.5 h-3.5" /></button>
+                            <button title={m.is_active ? 'Deactivate' : 'Activate'} onClick={() => toggleStatus(m)}
+                              className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                              {m.is_active
+                                ? <ToggleRight className="w-4 h-4 text-green-500" />
+                                : <ToggleLeft className="w-4 h-4" />}
+                            </button>
+                            <button title="Remove from institute" onClick={() => removeMember(m)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </Td>
                       </Tr>
@@ -218,7 +297,7 @@ export default function MembershipsPage() {
                 <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
                   <p className="text-xs text-gray-500">Page {page} of {totalPages}</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={page === 1}          onClick={() => setPage(p => p - 1)}>Prev</Button>
+                    <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
                     <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
                   </div>
                 </div>
@@ -227,57 +306,35 @@ export default function MembershipsPage() {
           </Card>
         </div>
 
-        {/* ── Add Member Modal ─────────────────────────────────────────────── */}
+        {/* ── Add Member Modal ──────────────────────────────────────────────── */}
         <Modal open={open} onClose={() => setOpen(false)} title="Add Member" size="md">
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Full Name *"
-                value={form.name}
-                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                required
-              />
-              <Input
-                label="Email *"
-                type="email"
-                value={form.email}
-                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                required
-              />
-              <Input
-                label="Password *"
-                type="password"
-                value={form.password}
+              <Input label="Full Name *" value={form.name}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+              <Input label="Email *" type="email" value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
+              <Input label="Password *" type="password" value={form.password}
                 onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                required
-                hint="Minimum 8 characters"
-              />
-              <Input
-                label="Phone"
-                value={form.phone}
+                required hint="Minimum 8 characters" />
+              <Input label="Phone" value={form.phone}
                 onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                placeholder="+91-XXXXXXXXXX"
-              />
+                placeholder="+91-XXXXXXXXXX" />
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Assign Roles *</p>
-              <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto border border-gray-200 rounded-xl p-3">
-                {roles.map(r => (
-                  <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1.5">
-                    <input
-                      type="checkbox"
-                      checked={form.roleIds.includes(r.id)}
-                      onChange={() => toggleRole(r.id, form.roleIds, ids => setForm(p => ({ ...p, roleIds: ids })))}
-                      className="w-4 h-4 rounded text-indigo-600"
-                    />
-                    <span className="text-gray-700">{r.displayName}</span>
-                  </label>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-gray-700">Assign Roles *</p>
+                {form.roleIds.length > 0 && (
+                  <span className="text-xs text-indigo-600 font-medium">
+                    {form.roleIds.length} role{form.roleIds.length !== 1 ? 's' : ''} selected
+                  </span>
+                )}
               </div>
-              {form.roleIds.length > 0 && (
-                <p className="text-xs text-indigo-600 mt-1">{form.roleIds.length} role{form.roleIds.length !== 1 ? 's' : ''} selected</p>
-              )}
+              <RoleCheckboxList
+                selected={form.roleIds}
+                onChange={ids => setForm(p => ({ ...p, roleIds: ids }))}
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
@@ -287,28 +344,57 @@ export default function MembershipsPage() {
           </form>
         </Modal>
 
-        {/* ── Edit Roles Modal ─────────────────────────────────────────────── */}
-        <Modal open={editOpen} onClose={() => setEditOpen(false)} title={`Edit Roles — ${editing?.user?.name}`} size="sm">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto border border-gray-200 rounded-xl p-3">
-              {roles.map(r => (
-                <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1.5">
-                  <input
-                    type="checkbox"
-                    checked={editRoleIds.includes(r.id)}
-                    onChange={() => toggleRole(r.id, editRoleIds, setEditRoleIds)}
-                    className="w-4 h-4 rounded text-indigo-600"
-                  />
-                  <span className="text-gray-700">{r.displayName}</span>
-                </label>
-              ))}
+        {/* ── Edit Member Modal ─────────────────────────────────────────────── */}
+        <Modal open={editOpen} onClose={() => setEditOpen(false)}
+          title={`Edit Member — ${editing?.user?.name}`} size="md">
+          <div className="space-y-5">
+            {/* Name + Password section */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Account Details
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Display Name"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder={editing?.user?.name || 'Name'}
+                />
+                <Input
+                  label="New Password"
+                  type="password"
+                  value={editPassword}
+                  onChange={e => setEditPassword(e.target.value)}
+                  placeholder="Leave blank to keep current"
+                  hint={editPassword ? (editPassword.length < 8 ? 'Min 8 characters' : '✓ OK') : undefined}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                Leave password blank to keep the current password unchanged.
+              </p>
             </div>
-            {editRoleIds.length > 0 && (
-              <p className="text-xs text-indigo-600">{editRoleIds.length} role{editRoleIds.length !== 1 ? 's' : ''} selected</p>
-            )}
+
+            {/* Roles section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Assigned Roles
+                </p>
+                {editRoleIds.length > 0 && (
+                  <span className="text-xs text-indigo-600 font-medium">
+                    {editRoleIds.length} role{editRoleIds.length !== 1 ? 's' : ''} selected
+                  </span>
+                )}
+              </div>
+              <RoleCheckboxList
+                selected={editRoleIds}
+                onChange={setEditRoleIds}
+              />
+            </div>
+
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-              <Button onClick={handleEditSave} loading={saving}>Save Roles</Button>
+              <Button onClick={handleEditSave} loading={saving}>Save Changes</Button>
             </div>
           </div>
         </Modal>

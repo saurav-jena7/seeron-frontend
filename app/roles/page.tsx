@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2, Shield, Lock } from 'lucide-react';
 
 interface PermRef { id: string; name: string; resource: string; action: string; module: string; }
-interface Role { id: string; name: string; displayName: string; description: string; isSystem: boolean; institute: string | null; permissions: PermRef[]; }
+interface Role { id: string; name: string; display_name: string; description: string; isSystem: boolean; institute: string | null; permissions: PermRef[]; }
 
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -42,7 +42,7 @@ export default function RolesPage() {
   function openAdd() { setEditing(null); setForm({ name: '', displayName: '', description: '', permissions: [] }); setOpen(true); }
   function openEdit(r: Role) {
     setEditing(r);
-    setForm({ name: r.name, displayName: r.displayName, description: r.description || '', permissions: r.permissions.map(p => p.id) });
+    setForm({ name: r.name, displayName: r.display_name, description: r.description || '', permissions: r.permissions.map(p => p.id) });
     setOpen(true);
   }
 
@@ -74,8 +74,8 @@ export default function RolesPage() {
   }
 
   async function del(r: Role) {
-    if (r.isSystem) { toast.error('Cannot delete system roles'); return; }
-    if (!confirm(`Delete role "${r.displayName}"?`)) return;
+    if (r.is_system) { toast.error('Cannot delete system roles'); return; }
+    if (!confirm(`Delete role "${r.display_name}"?`)) return;
     try { await api.delete(`/roles/${r.id}`); toast.success('Role deleted'); load(); }
     catch (err) { toast.error(getApiError(err)); }
   }
@@ -103,15 +103,15 @@ export default function RolesPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-900">{r.displayName}</p>
-                          {r.isSystem && <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded"><Lock className="w-3 h-3" /> System</span>}
+                          <p className="font-semibold text-gray-900">{r.display_name}</p>
+                          {r.is_system && <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded"><Lock className="w-3 h-3" /> System</span>}
                         </div>
                         <p className="text-xs text-gray-500 font-mono mt-0.5">{r.name}</p>
                         {r.description && <p className="text-xs text-gray-400 mt-1">{r.description}</p>}
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
                         <button onClick={() => openEdit(r)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
-                        {!r.isSystem && <button onClick={() => del(r)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>}
+                        {!r.is_system && <button onClick={() => del(r)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>}
                       </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-100">
@@ -131,7 +131,7 @@ export default function RolesPage() {
         </div>
 
         {/* Create / Edit Role Modal */}
-        <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Edit: ${editing.displayName}` : 'Create Role'} size="xl">
+        <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Edit: ${editing.display_name}` : 'Create Role'} size="xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               {!editing && <Input label="Role ID (uppercase)" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value.toUpperCase().replace(/\s+/g, '_') }))} required placeholder="e.g. EXAM_COORDINATOR" />}
@@ -189,3 +189,4 @@ export default function RolesPage() {
     </AuthGuard>
   );
 }
+
