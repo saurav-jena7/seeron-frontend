@@ -16,7 +16,6 @@ import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 
 interface Class { id: string; name: string; level: number; }
 
-/** Auto-extract a numeric level from the class name, e.g. "Class 10" ? 10 */
 function extractLevel(name: string): number | undefined {
   const match = name.match(/\d+/);
   return match ? parseInt(match[0]) : undefined;
@@ -35,20 +34,19 @@ export default function ClassesPage() {
 
   async function load() {
     setLoading(true);
-    try { const r = await api.get('/academics/classes'); setClasses(r.data.data); } catch {}
+    try { const r = await api.get('/academics/classes'); setClasses(r.data.data || []); } catch {}
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
 
-  function openAdd()       { setEditing(null); setName('');      setOpen(true); }
-  function openEdit(c: Class) { setEditing(c);   setName(c.name); setOpen(true); }
+  function openAdd()            { setEditing(null); setName('');      setOpen(true); }
+  function openEdit(c: Class)   { setEditing(c);   setName(c.name); setOpen(true); }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) { toast.error('Class name is required'); return; }
     setSaving(true);
     try {
-      // Level is auto-derived from the name � no manual input needed
       const level = extractLevel(name);
       if (editing) await api.put(`/academics/classes/${editing.id}`, { name: name.trim(), level });
       else         await api.post('/academics/classes', { name: name.trim(), level });
@@ -91,36 +89,38 @@ export default function ClassesPage() {
                     </tr>
                   </Thead>
                   <Tbody>
-                    {classes.length === 0
-                      ? <Tr>
-                          <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 2 : 1}>
-                            No classes found{isAdmin && <> � <button onClick={openAdd} className="text-indigo-600 hover:underline ml-1">add one</button></>}
-                          </Td>
-                        </Tr>
-                      : classes.map(c => (
-                        <Tr key={c.id}>
+                    {classes.length === 0 ? (
+                      <Tr>
+                        <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 2 : 1}>
+                          No classes found{isAdmin && (
+                            <> &mdash; <button onClick={openAdd} className="text-indigo-600 hover:underline ml-1">add one</button></>
+                          )}
+                        </Td>
+                      </Tr>
+                    ) : classes.map(c => (
+                      <Tr key={c.id}>
+                        <Td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {c.level ?? c.name.match(/\d+/)?.[0] ?? c.name[0]}
+                            </div>
+                            <span className="font-medium text-gray-900">{c.name}</span>
+                          </div>
+                        </Td>
+                        {isAdmin && (
                           <Td>
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                {c.level ?? c.name.match(/\d+/)?.[0] ?? c.name[0]}
-                              </div>
-                              <span className="font-medium text-gray-900">{c.name}</span>
+                            <div className="flex gap-1">
+                              <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => del(c)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </Td>
-                          {isAdmin && (
-                            <Td>
-                              <div className="flex gap-1">
-                                <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => del(c)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </Td>
-                          )}
-                        </Tr>
-                      ))}
+                        )}
+                      </Tr>
+                    ))}
                   </Tbody>
                 </Table>
               )}
@@ -137,7 +137,7 @@ export default function ClassesPage() {
                 onChange={e => setName(e.target.value)}
                 required
                 placeholder="e.g. Class 10"
-                hint="The sort order is automatically set from the number in the name"
+                hint="Sort order is auto-set from the number in the name"
               />
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" type="button" onClick={() => setOpen(false)}>Cancel</Button>

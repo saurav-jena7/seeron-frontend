@@ -5,11 +5,11 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Table, Thead, Th, Tbody, Tr, Td } from '@/components/ui/Table';
 import Spinner from '@/components/ui/Spinner';
+import Button from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { GraduationCap } from 'lucide-react';
 import Link from 'next/link';
-import Button from '@/components/ui/Button';
 
 interface Teacher {
   id: string;
@@ -25,11 +25,11 @@ interface Teacher {
 
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     api.get('/employees/teachers/list')
-      .then((r) => setTeachers(r.data.data))
+      .then(r => setTeachers(r.data.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -56,13 +56,8 @@ export default function TeachersPage() {
                 <Table>
                   <Thead>
                     <tr>
-                      <Th>Name</Th>
-                      <Th>Code</Th>
-                      <Th>Designation</Th>
-                      <Th>Department</Th>
-                      <Th>Phone</Th>
-                      <Th>Email</Th>
-                      <Th>Joined</Th>
+                      <Th>Name</Th><Th>Code</Th><Th>Designation</Th>
+                      <Th>Department</Th><Th>Phone</Th><Th>Email</Th><Th>Joined</Th>
                     </tr>
                   </Thead>
                   <Tbody>
@@ -72,26 +67,24 @@ export default function TeachersPage() {
                           No teachers found
                         </Td>
                       </Tr>
-                    ) : (
-                      teachers.map((t) => (
-                        <Tr key={t.id}>
-                          <Td>
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                                {t.name[0]}
-                              </div>
-                              <div className="font-medium text-gray-900">{t.name}</div>
+                    ) : teachers.map(t => (
+                      <Tr key={t.id}>
+                        <Td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                              {t.name[0]}
                             </div>
-                          </Td>
-                          <Td className="text-gray-600">{t.employee_code || '—'}</Td>
-                          <Td>{t.designation || '—'}</Td>
-                          <Td>{t.department || '—'}</Td>
-                          <Td>{t.phone || '—'}</Td>
-                          <Td className="text-gray-500 text-xs">{t.email || '—'}</Td>
-                          <Td className="text-gray-500">{formatDate(t.joining_date || t.created_at)}</Td>
-                        </Tr>
-                      ))
-                    )}
+                            <div className="font-medium text-gray-900">{t.name}</div>
+                          </div>
+                        </Td>
+                        <Td className="text-gray-600">{t.employee_code || '--'}</Td>
+                        <Td>{t.designation || '--'}</Td>
+                        <Td>{t.department || '--'}</Td>
+                        <Td>{t.phone || '--'}</Td>
+                        <Td className="text-gray-500 text-xs">{t.email || '--'}</Td>
+                        <Td className="text-gray-500">{formatDate(t.joining_date || t.created_at)}</Td>
+                      </Tr>
+                    ))}
                   </Tbody>
                 </Table>
               )}

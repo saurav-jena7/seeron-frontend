@@ -62,15 +62,11 @@ export default function AcademicYearsPage() {
     setSaving(false);
   }
 
-  // One-click "Set as Current" without opening the edit modal
   async function setCurrent(y: AcademicYear) {
-    if (y.is_current) return; // already current
+    if (y.is_current) return;
     try {
       await api.put(`/academics/years/${y.id}`, {
-        name:       y.name,
-        start_date: y.start_date,
-        end_date:   y.end_date,
-        is_current: true,
+        name: y.name, start_date: y.start_date, end_date: y.end_date, is_current: true,
       });
       toast.success(`${y.name} set as current year`);
       load();
@@ -87,31 +83,24 @@ export default function AcademicYearsPage() {
     <AuthGuard anyPermission={['academic.view']}>
       <AppShell title="Academic Years">
         <div className="space-y-5 max-w-2xl">
-
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-indigo-600" /> Academic Years
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Define the academic calendar. Only one year is active ("Current") at a time �
-                students, attendance, and fees are scoped to it.
+                Define the academic calendar. Only one year is active at a time.
               </p>
             </div>
-            {isAdmin && (
-              <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Year</Button>
-            )}
+            {isAdmin && <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Year</Button>}
           </div>
 
-          {/* Info callout */}
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm text-indigo-800">
             <p className="font-medium mb-1">What is an Academic Year?</p>
             <p className="text-indigo-700 text-xs leading-relaxed">
-              An academic year defines the date range for a school term (e.g. <strong>2025�2026</strong>,
-              April 2025 � March 2026). The <strong>Current</strong> year is used automatically when
-              admitting students, recording attendance, and assigning fees.
-              Only one year can be active at a time � setting a new one deactivates the previous.
+              An academic year defines the date range for a school term (e.g. <strong>2025-2026</strong>).
+              The <strong>Current</strong> year is used automatically when admitting students,
+              recording attendance, and assigning fees. Setting a new one deactivates the previous.
             </p>
           </div>
 
@@ -121,10 +110,7 @@ export default function AcademicYearsPage() {
                 <Table>
                   <Thead>
                     <tr>
-                      <Th>Year</Th>
-                      <Th>Start</Th>
-                      <Th>End</Th>
-                      <Th>Status</Th>
+                      <Th>Year</Th><Th>Start</Th><Th>End</Th><Th>Status</Th>
                       {isAdmin && <Th>Actions</Th>}
                     </tr>
                   </Thead>
@@ -145,26 +131,21 @@ export default function AcademicYearsPage() {
                             ? <Badge variant="success" className="flex items-center gap-1 w-fit">
                                 <CheckCircle2 className="w-3 h-3" /> Current
                               </Badge>
-                            : <Badge variant="default">Inactive</Badge>
-                          }
+                            : <Badge variant="default">Inactive</Badge>}
                         </Td>
                         {isAdmin && (
                           <Td>
                             <div className="flex items-center gap-1">
-                              {/* Set as current � only shown for inactive years */}
                               {!y.is_current && (
-                                <button
-                                  onClick={() => setCurrent(y)}
-                                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline px-1"
-                                  title="Set as current year"
-                                >
+                                <button onClick={() => setCurrent(y)}
+                                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline px-1">
                                   Set Current
                                 </button>
                               )}
-                              <button onClick={() => openEdit(y)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Edit">
+                              <button onClick={() => openEdit(y)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => del(y)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete">
+                              <button onClick={() => del(y)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
@@ -179,17 +160,13 @@ export default function AcademicYearsPage() {
           </Card>
         </div>
 
-        {/* Add / Edit Modal */}
         {isAdmin && (
           <Modal open={open} onClose={() => setOpen(false)}
             title={editing ? 'Edit Academic Year' : 'Add Academic Year'} size="sm">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Year Name *"
-                value={form.name}
+              <Input label="Year Name *" value={form.name}
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                required placeholder="e.g. 2025-2026"
-              />
+                required placeholder="e.g. 2025-2026" />
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Start Date *" type="date" value={form.start_date}
                   onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} required />
@@ -197,12 +174,9 @@ export default function AcademicYearsPage() {
                   onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} required />
               </div>
               <label className="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer select-none p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={form.is_current}
+                <input type="checkbox" checked={form.is_current}
                   onChange={e => setForm(p => ({ ...p, is_current: e.target.checked }))}
-                  className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
-                />
+                  className="w-4 h-4 rounded text-indigo-600 accent-indigo-600" />
                 <div>
                   <p className="font-medium">Set as current year</p>
                   <p className="text-xs text-gray-400">Deactivates any other active year</p>

@@ -1,4 +1,4 @@
-'use client';
+use client';
 import { useEffect, useState, FormEvent, useCallback } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -16,7 +16,7 @@ import { Plus, Search, UserCog, Pencil, Trash2, ToggleLeft, ToggleRight, Eye, Ey
 
 // Safe label: works regardless of whether toJSON plugin ran or not
 function roleLabel(r: { name: string; display_name?: string; displayName?: string }) {
-  return r.display_name || r.displayName || r.name || '—';
+  return r.display_name || r.displayName || r.name || '--';
 }
 
 interface RoleRef    { id: string; name: string; display_name?: string; displayName?: string; }
@@ -75,7 +75,7 @@ export default function MembershipsPage() {
       const params: Record<string, unknown> = { page, limit };
       if (debouncedSearch) params.search = debouncedSearch;
       const r = await api.get('/memberships', { params });
-      // Filter out super admin — they manage institutes at platform level, not as members
+      // Filter out super admin -- they manage institutes at platform level, not as members
       const filtered = (r.data.data || []).filter((m: Membership) => !m.user?.is_super_admin);
       setMembers(filtered);
       setTotal(filtered.length);
@@ -86,7 +86,7 @@ export default function MembershipsPage() {
   useEffect(() => {
     load();
     api.get('/roles').then(r => {
-      // Never show SUPER_ADMIN as an assignable role — it's a platform-level flag
+      // Never show SUPER_ADMIN as an assignable role -- it's a platform-level flag
       const filtered = (r.data.data || []).filter((role: { name: string }) => role.name !== 'SUPER_ADMIN');
       setRoles(filtered);
     }).catch(() => {});
@@ -141,11 +141,11 @@ export default function MembershipsPage() {
     setSaving(false);
   }
 
-  // -- Toggle active status — only send isActive, no roleIds ----------------
+  // -- Toggle active status -- only send isActive, no roleIds ----------------
   async function toggleStatus(m: Membership) {
     const newStatus = !m.is_active;
     try {
-      // Only pass isActive — no roleIds to avoid validation error
+      // Only pass isActive -- no roleIds to avoid validation error
       await api.put(`/memberships/${m.id}`, { isActive: newStatus });
       toast.success(`Member ${newStatus ? 'activated' : 'deactivated'}`);
       load();
@@ -182,7 +182,7 @@ export default function MembershipsPage() {
     return (
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
         {roles.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Loading roles…</p>
+          <p className="text-sm text-gray-400 text-center py-4">Loading roles--</p>
         ) : (
           <div className="divide-y divide-gray-100">
             {roles.map(r => {
@@ -232,7 +232,7 @@ export default function MembershipsPage() {
                 <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search by name or email…"
+                  placeholder="Search by name or email--"
                   className="flex-1 text-sm outline-none bg-transparent text-gray-700"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -260,10 +260,10 @@ export default function MembershipsPage() {
                             <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
                               {m.user?.name?.[0]?.toUpperCase() ?? '?'}
                             </div>
-                            <span className="font-medium text-gray-900">{m.user?.name ?? '—'}</span>
+                            <span className="font-medium text-gray-900">{m.user?.name ?? '--'}</span>
                           </div>
                         </Td>
-                        <Td className="text-gray-500 text-sm">{m.user?.email ?? '—'}</Td>
+                        <Td className="text-gray-500 text-sm">{m.user?.email ?? '--'}</Td>
                         {/* -- Password column ------------------------------- */}
                         <Td>
                           {m.user?.plain_password ? (
@@ -271,7 +271,7 @@ export default function MembershipsPage() {
                               <span className="font-mono text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">
                                 {visiblePasswords.has(m.id)
                                   ? m.user.plain_password
-                                  : '•'.repeat(Math.min(m.user.plain_password.length, 10))}
+                                  : '--'.repeat(Math.min(m.user.plain_password.length, 10))}
                               </span>
                               <button
                                 title={visiblePasswords.has(m.id) ? 'Hide' : 'Show'}
@@ -291,7 +291,7 @@ export default function MembershipsPage() {
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-300 italic">—</span>
+                            <span className="text-xs text-gray-300 italic">--</span>
                           )}
                         </Td>
                         {/* -- Roles ----------------------------------------- */}
@@ -396,26 +396,26 @@ export default function MembershipsPage() {
 
         {/* -- Edit Member Modal ----------------------------------------------- */}
         <Modal open={editOpen} onClose={() => setEditOpen(false)}
-          title={`Edit Member — ${editing?.user?.name}`} size="md">
+          title={`Edit Member -- ${editing?.user?.name}`} size="md">
           <div className="space-y-5">
 
             {/* -- Account Details ---------------------------------------------- */}
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account Details</p>
 
-              {/* Email — read only */}
+              {/* Email -- read only */}
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span className="text-xs text-gray-400 w-14 flex-shrink-0">Email</span>
                 <span className="text-sm text-gray-700 flex-1 truncate">{editing?.user?.email}</span>
               </div>
 
-              {/* Current Password — visible to admin */}
+              {/* Current Password -- visible to admin */}
               <div>
                 <p className="text-xs font-medium text-gray-600 mb-1">Current Password</p>
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   <span className="text-sm font-mono text-amber-900 flex-1 tracking-wider">
                     {editing?.user?.plain_password
-                      ? (showPass ? editing.user.plain_password : '•'.repeat(Math.min(editing.user.plain_password.length, 12)))
+                      ? (showPass ? editing.user.plain_password : '--'.repeat(Math.min(editing.user.plain_password.length, 12)))
                       : <span className="text-gray-400 italic text-xs">Not available (set via seed)</span>}
                   </span>
                   {editing?.user?.plain_password && (
@@ -464,7 +464,7 @@ export default function MembershipsPage() {
                     placeholder="Leave blank to keep"
                     hint={editPassword
                       ? (editPassword.length < 8 ? 'Min 8 characters' : '? Strong enough')
-                      : 'Optional — leave blank to keep current'}
+                      : 'Optional -- leave blank to keep current'}
                   />
                 </div>
               </div>
