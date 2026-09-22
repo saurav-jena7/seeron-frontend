@@ -14,6 +14,7 @@ import api from '@/lib/api';
 import { getApiError, formatCurrency } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react';
+import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 
 interface Employee {
   id: string; name: string; employee_code: string; designation: string;
@@ -29,6 +30,9 @@ const emptyForm = {
 };
 
 export default function EmployeesPage() {
+  const ctx       = getAuthContext();
+  const canManage = isSuperAdmin(ctx) || hasPermission('employee.create', ctx);
+  const canDelete = isSuperAdmin(ctx) || hasPermission('employee.delete', ctx);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [total,     setTotal]     = useState(0);
   const [loading,   setLoading]   = useState(true);
@@ -114,7 +118,9 @@ export default function EmployeesPage() {
               </h2>
               <p className="text-sm text-gray-500">{total} total employees</p>
             </div>
-            <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Employee</Button>
+            {canManage && (
+              <Button onClick={openAdd}><Plus className="w-4 h-4" /> Add Employee</Button>
+            )}
           </div>
 
           <Card>
@@ -132,12 +138,13 @@ export default function EmployeesPage() {
                   <Thead>
                     <tr>
                       <Th>Name</Th><Th>Code</Th><Th>Designation</Th><Th>Department</Th>
-                      <Th>Phone</Th><Th>Type</Th><Th>Salary</Th><Th>Role</Th><Th>Actions</Th>
+                      <Th>Phone</Th><Th>Type</Th><Th>Salary</Th><Th>Role</Th>
+                      {(canManage || canDelete) && <Th>Actions</Th>}
                     </tr>
                   </Thead>
                   <Tbody>
                     {employees.length === 0 ? (
-                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={9}>No employees found</Td></Tr>
+                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={(canManage || canDelete) ? 9 : 8}>No employees found</Td></Tr>
                     ) : employees.map(emp => (
                       <Tr key={emp.id}>
                         <Td>
@@ -151,16 +158,22 @@ export default function EmployeesPage() {
                         <Td><Badge variant="info">{emp.employment_type?.replace('_', ' ')}</Badge></Td>
                         <Td>{emp.salary ? formatCurrency(emp.salary) : '--'}</Td>
                         <Td>{emp.is_teacher ? <Badge variant="purple">Teacher</Badge> : <Badge variant="default">Staff</Badge>}</Td>
-                        <Td>
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => openEdit(emp)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDelete(emp)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </Td>
+                        {(canManage || canDelete) && (
+                          <Td>
+                            <div className="flex items-center gap-1">
+                              {canManage && (
+                                <button onClick={() => openEdit(emp)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button onClick={() => handleDelete(emp)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </Td>
+                        )}
                       </Tr>
                     ))}
                   </Tbody>
@@ -179,6 +192,7 @@ export default function EmployeesPage() {
           </Card>
         </div>
 
+        {canManage && (
         <Modal open={modalOpen} onClose={() => setModalOpen(false)}
           title={editing ? 'Edit Employee' : 'Add Employee'} size="lg">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -215,6 +229,7 @@ export default function EmployeesPage() {
             </div>
           </form>
         </Modal>
+        )}
       </AppShell>
     </AuthGuard>
   );

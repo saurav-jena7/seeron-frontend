@@ -19,7 +19,7 @@ interface Notice { id: string; title: string; content: string; audience: string;
 
 export default function NoticesPage() {
   const ctx = getAuthContext();
-  const isAdmin = isSuperAdmin(ctx) || hasPermission('academic.create', ctx);
+  const isAdmin = isSuperAdmin(ctx) || hasPermission('notice.create', ctx);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);

@@ -36,7 +36,7 @@ const emptyForm = {
 
 export default function StudentsPage() {
   const ctx = getAuthContext();
-  const isAdmin = isSuperAdmin(ctx) || hasPermission('academic.create', ctx);
+  const isAdmin = isSuperAdmin(ctx) || hasPermission('student.create', ctx);
   const [students, setStudents] = useState<Student[]>([]);
   const [total, setTotal] = useState(0);
   const [classes, setClasses] = useState<Class[]>([]);
