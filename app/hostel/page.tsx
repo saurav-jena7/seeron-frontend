@@ -14,11 +14,19 @@ import api from '@/lib/api';
 import { getAuthContext, hasPermission } from '@/lib/auth';
 import { getApiError } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { Home, BedDouble, Users, AlertCircle, Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Home, BedDouble, Users, AlertCircle, Plus, Pencil, Trash2, Search, UserCheck } from 'lucide-react';
 
 interface HostelStats { totalHostels: number; totalRooms: number; totalBeds: number; occupiedBeds: number; activeAllocs: number; }
 interface Hostel { id: string; name: string; type: string; address?: string; capacity: number; totalRooms?: number; occupiedRooms?: number; }
 interface Room { id: string; hostel: { id: string; name: string } | null; room_number: string; floor: number; capacity: number; occupied: number; room_type: string; status: string; }
+interface Allocation {
+  id: string;
+  student: { id: string; name: string; admission_no: string } | null;
+  hostel:  { id: string; name: string } | null;
+  room:    { id: string; room_number: string; floor: number } | null;
+  check_in: string; check_out?: string; status: string;
+}
+interface Student { id: string; name: string; admission_no: string; }
 
 export default function HostelPage() {
   const ctx       = getAuthContext();
@@ -26,12 +34,13 @@ export default function HostelPage() {
   const canEdit   = hasPermission('hostel.room.update', ctx);
   const canAlloc  = hasPermission('hostel.allocation.create', ctx);
 
-  const [stats,     setStats]     = useState<HostelStats | null>(null);
-  const [hostels,   setHostels]   = useState<Hostel[]>([]);
-  const [rooms,     setRooms]     = useState<Room[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [tab,       setTab]       = useState<'hostels' | 'rooms' | 'allocations'>('hostels');
-  const [search,    setSearch]    = useState('');
+  const [stats,       setStats]       = useState<HostelStats | null>(null);
+  const [hostels,     setHostels]     = useState<Hostel[]>([]);
+  const [rooms,       setRooms]       = useState<Room[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [tab,         setTab]         = useState<'hostels' | 'rooms' | 'allocations'>('hostels');
+  const [search,      setSearch]      = useState('');
 
   // Add hostel modal
   const [hostelOpen,  setHostelOpen]  = useState(false);
@@ -43,17 +52,28 @@ export default function HostelPage() {
   const [roomForm,    setRoomForm]    = useState({ hostel_id: '', room_number: '', floor: '0', capacity: '2', room_type: 'double' });
   const [roomSave,    setRoomSave]    = useState(false);
 
+  // Allocate student modal
+  const [allocOpen,   setAllocOpen]   = useState(false);
+  const [allocForm,   setAllocForm]   = useState({ hostel_id: '', room_id: '', student_id: '', check_in: new Date().toISOString().split('T')[0] });
+  const [allocSave,   setAllocSave]   = useState(false);
+  const [studentSearch,   setStudentSearch]   = useState('');
+  const [studentResults,  setStudentResults]  = useState<Student[]>([]);
+  const [selStudent,      setSelStudent]      = useState<Student | null>(null);
+  const [allocRooms,      setAllocRooms]      = useState<Room[]>([]);
+
   async function loadAll() {
     setLoading(true);
     try {
-      const [sRes, hRes, rRes] = await Promise.all([
+      const [sRes, hRes, rRes, aRes] = await Promise.all([
         api.get('/hostel/stats').catch(() => ({ data: { data: {} } })),
         api.get('/hostel/hostels').catch(() => ({ data: { data: [] } })),
         api.get('/hostel/rooms').catch(() => ({ data: { data: [] } })),
+        api.get('/hostel/allocations').catch(() => ({ data: { data: [] } })),
       ]);
       setStats(sRes.data.data);
       setHostels(hRes.data.data || []);
       setRooms(rRes.data.data || []);
+      setAllocations(aRes.data.data || []);
     } catch {}
     setLoading(false);
   }
@@ -88,10 +108,68 @@ export default function HostelPage() {
     catch (err) { toast.error(getApiError(err)); }
   }
 
+  // Student search for allocation modal
+  async function searchStudents(q: string) {
+    if (q.length < 2) { setStudentResults([]); return; }
+    try {
+      const r = await api.get('/students', { params: { search: q, limit: 5 } });
+      setStudentResults(r.data.data || []);
+    } catch {}
+  }
+
+  function selectStudent(s: Student) {
+    setSelStudent(s);
+    setAllocForm(p => ({ ...p, student_id: s.id }));
+    setStudentSearch(s.name);
+    setStudentResults([]);
+  }
+
+  // When hostel changes in alloc modal, reload available rooms for that hostel
+  async function onAllocHostelChange(hostelId: string) {
+    setAllocForm(p => ({ ...p, hostel_id: hostelId, room_id: '' }));
+    if (!hostelId) { setAllocRooms([]); return; }
+    try {
+      const r = await api.get('/hostel/rooms', { params: { hostel_id: hostelId, status: 'available' } });
+      setAllocRooms(r.data.data || []);
+    } catch { setAllocRooms([]); }
+  }
+
+  async function allocateStudent(e: React.FormEvent) {
+    e.preventDefault(); setAllocSave(true);
+    try {
+      await api.post('/hostel/allocations', {
+        hostel_id: allocForm.hostel_id,
+        room_id:   allocForm.room_id,
+        student_id: allocForm.student_id,
+        check_in:  allocForm.check_in,
+      });
+      toast.success('Student allocated to room');
+      setAllocOpen(false);
+      setAllocForm({ hostel_id: '', room_id: '', student_id: '', check_in: new Date().toISOString().split('T')[0] });
+      setSelStudent(null); setStudentSearch(''); setAllocRooms([]);
+      loadAll();
+    } catch (err) { toast.error(getApiError(err)); }
+    setAllocSave(false);
+  }
+
+  async function vacateStudent(allocId: string) {
+    if (!confirm('Mark this student as vacated?')) return;
+    try {
+      await api.put(`/hostel/allocations/${allocId}/vacate`, {});
+      toast.success('Student vacated');
+      loadAll();
+    } catch (err) { toast.error(getApiError(err)); }
+  }
+
   const filteredHostels = hostels.filter(h => h.name?.toLowerCase().includes(search.toLowerCase()));
   const filteredRooms   = rooms.filter(r =>
     r.room_number?.toLowerCase().includes(search.toLowerCase()) ||
     (r.hostel as any)?.name?.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredAllocs  = allocations.filter(a =>
+    a.student?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    a.student?.admission_no?.toLowerCase().includes(search.toLowerCase()) ||
+    (a.room as any)?.room_number?.toLowerCase().includes(search.toLowerCase())
   );
 
   const statusVariant = (s: string): 'success' | 'danger' | 'warning' =>
@@ -226,10 +304,74 @@ export default function HostelPage() {
           {/* Allocations tab */}
           {tab === 'allocations' && (
             <Card>
-              <CardHeader><CardTitle>Student Allocations</CardTitle></CardHeader>
-              <CardContent className="py-12 text-center text-gray-400">
-                <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
-                <p>Allocate students to rooms from the Students panel</p>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-teal-500" />
+                  Student Allocations ({filteredAllocs.length})
+                </CardTitle>
+                {canAlloc && (
+                  <button onClick={() => setAllocOpen(true)}
+                    className="flex items-center gap-1.5 text-xs text-teal-600 hover:underline font-medium">
+                    <Plus className="w-3.5 h-3.5" /> Allocate Student
+                  </button>
+                )}
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading ? <Spinner /> : filteredAllocs.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
+                    <p className="text-gray-400 text-sm">No allocations found</p>
+                    {canAlloc && (
+                      <button onClick={() => setAllocOpen(true)} className="mt-2 text-sm text-teal-600 hover:underline font-medium">
+                        + Allocate a student
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <Table>
+                    <Thead>
+                      <tr>
+                        <Th>Student</Th><Th>Hostel</Th><Th>Room</Th>
+                        <Th>Check-in</Th><Th>Status</Th>
+                        {canAlloc && <Th>Actions</Th>}
+                      </tr>
+                    </Thead>
+                    <Tbody>
+                      {filteredAllocs.map(a => (
+                        <Tr key={a.id}>
+                          <Td>
+                            <div className="font-medium text-gray-900">{a.student?.name ?? '—'}</div>
+                            <div className="text-xs text-gray-400">#{a.student?.admission_no}</div>
+                          </Td>
+                          <Td className="text-gray-600">{(a.hostel as any)?.name ?? '—'}</Td>
+                          <Td className="text-gray-600">
+                            {(a.room as any)?.room_number
+                              ? `Room ${(a.room as any).room_number}${(a.room as any).floor != null ? ` (Floor ${(a.room as any).floor})` : ''}`
+                              : '—'}
+                          </Td>
+                          <Td className="text-gray-500 text-sm">{a.check_in || '—'}</Td>
+                          <Td>
+                            <Badge variant={a.status === 'active' ? 'success' : 'default'} className="capitalize">
+                              {a.status}
+                            </Badge>
+                          </Td>
+                          {canAlloc && (
+                            <Td>
+                              {a.status === 'active' && (
+                                <button
+                                  onClick={() => vacateStudent(a.id)}
+                                  className="text-xs text-orange-600 hover:text-orange-800 font-medium hover:underline"
+                                >
+                                  Vacate
+                                </button>
+                              )}
+                            </Td>
+                          )}
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           )}
@@ -268,6 +410,53 @@ export default function HostelPage() {
               <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
                 <Button variant="outline" type="button" onClick={() => setRoomOpen(false)}>Cancel</Button>
                 <Button type="submit" loading={roomSave}>Add Room</Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+
+        {/* Allocate Student Modal */}
+        {canAlloc && (
+          <Modal open={allocOpen} onClose={() => { setAllocOpen(false); setSelStudent(null); setStudentSearch(''); setStudentResults([]); setAllocRooms([]); }} title="Allocate Student to Room" size="sm">
+            <form onSubmit={allocateStudent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student *</label>
+                <div className="relative">
+                  <input type="text" value={studentSearch}
+                    onChange={e => { setStudentSearch(e.target.value); searchStudents(e.target.value); }}
+                    placeholder="Search by name or admission no…"
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                  {studentResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20 mt-1">
+                      {studentResults.map(s => (
+                        <button key={s.id} type="button" onClick={() => selectStudent(s)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 flex justify-between">
+                          <span className="font-medium text-gray-800">{s.name}</span>
+                          <span className="text-gray-400 text-xs">#{s.admission_no}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selStudent && <p className="text-xs text-green-600 mt-1">✓ {selStudent.name} selected</p>}
+              </div>
+              <Select label="Hostel *" value={allocForm.hostel_id}
+                onChange={e => onAllocHostelChange(e.target.value)}
+                options={hostels.map(h => ({ value: h.id, label: h.name }))}
+                placeholder="Select hostel" required />
+              <Select label="Room *" value={allocForm.room_id}
+                onChange={e => setAllocForm(p => ({ ...p, room_id: e.target.value }))}
+                options={allocRooms.map(r => ({
+                  value: r.id,
+                  label: `Room ${r.room_number} (Floor ${r.floor}) — ${r.capacity - r.occupied} bed${r.capacity - r.occupied !== 1 ? 's' : ''} free`,
+                }))}
+                placeholder={allocForm.hostel_id ? (allocRooms.length === 0 ? 'No available rooms' : 'Select room') : 'Select hostel first'}
+                required />
+              <Input label="Check-in Date *" type="date" value={allocForm.check_in}
+                onChange={e => setAllocForm(p => ({ ...p, check_in: e.target.value }))} required />
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <Button variant="outline" type="button" onClick={() => setAllocOpen(false)}>Cancel</Button>
+                <Button type="submit" loading={allocSave} disabled={!allocForm.student_id || !allocForm.room_id}>Allocate</Button>
               </div>
             </form>
           </Modal>

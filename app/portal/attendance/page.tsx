@@ -17,7 +17,7 @@ interface AttRecord { id: string; date: string; status: string; remarks: string;
 interface AttSummary {
   records: AttRecord[];
   summary: Record<string, number>;
-  total: number; presentDays: number; attendancePercentage: string;
+  total: number; attendancePercentage: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {

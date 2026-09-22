@@ -58,7 +58,7 @@ export default function NoticesPage() {
   const audienceVariant = (a: string) => a === 'all' ? 'info' : a === 'students' ? 'success' : a === 'teachers' ? 'purple' : 'warning';
 
   return (
-    <AuthGuard>
+    <AuthGuard anyPermission={['notice.view']}>
       <AppShell title="Notices">
         <div className="space-y-5">
           <div className="flex items-center justify-between">

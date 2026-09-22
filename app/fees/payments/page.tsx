@@ -38,6 +38,12 @@ export default function FeePaymentsPage() {
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
   const [studentResults, setStudentResults] = useState<Student[]>([]);
   const [selStudent, setSelStudent] = useState<Student | null>(null);
   const [form, setForm] = useState({ student_id: '', fee_category_id: '', amount: '', payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', transaction_ref: '', remarks: '' });
@@ -47,7 +53,7 @@ export default function FeePaymentsPage() {
   async function load() {
     setLoading(true);
     try {
-      const r = await api.get('/fees/payments', { params: { page, limit } });
+      const r = await api.get('/fees/payments', { params: { page, limit, ...(search.trim() ? { search: search.trim() } : {}) } });
       setPayments(r.data.data); setTotal(r.data.meta.total);
     } catch {}
     setLoading(false);
@@ -56,7 +62,7 @@ export default function FeePaymentsPage() {
   useEffect(() => {
     load();
     api.get('/fees/categories').then((r) => setCategories(r.data.data));
-  }, [page]);
+  }, [page, search]);
 
   async function searchStudents(q: string) {
     if (q.length < 2) { setStudentResults([]); return; }

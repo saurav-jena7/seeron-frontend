@@ -63,7 +63,7 @@ export default function StudentDetailPage() {
   const statusVariant = student.status === 'active' ? 'success' : student.status === 'graduated' ? 'info' : 'warning';
 
   return (
-    <AuthGuard roles={['super_admin', 'admin', 'teacher']}>
+    <AuthGuard anyPermission={['student.view']}>
       <AppShell title="Student Detail">
         <div className="space-y-6 max-w-4xl">
           <div className="flex items-center gap-3">
