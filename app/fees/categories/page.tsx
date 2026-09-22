@@ -71,7 +71,7 @@ export default function FeeCategoriesPage() {
                   <Thead><tr><Th>Name</Th><Th>Description</Th><Th>Amount</Th><Th>Frequency</Th><Th>Actions</Th></tr></Thead>
                   <Tbody>
                     {categories.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={5 as never}>No categories</Td></Tr>
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={5}>No categories</Td></Tr>
                       : categories.map((c) => (
                         <Tr key={c.id}>
                           <Td className="font-medium text-gray-900">{c.name}</Td>

@@ -92,7 +92,7 @@ export default function AuditPage() {
                   <Thead><tr><Th>Action</Th><Th>Resource</Th><Th>User</Th><Th>IP</Th><Th>Time</Th></tr></Thead>
                   <Tbody>
                     {logs.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={5 as never}>No activity logs</Td></Tr>
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={5}>No activity logs</Td></Tr>
                       : logs.map((log) => (
                         <Tr key={log.id}>
                           <Td><Badge variant={actionVariant(log.action)}>{log.action}</Badge></Td>

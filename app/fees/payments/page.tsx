@@ -128,7 +128,7 @@ export default function FeePaymentsPage() {
                   </tr></Thead>
                   <Tbody>
                     {payments.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={7 as never}>No payments</Td></Tr>
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={7}>No payments</Td></Tr>
                       : payments.map((p) => (
                         <Tr key={p.id}>
                           <Td>

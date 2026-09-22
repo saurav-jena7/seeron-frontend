@@ -32,6 +32,6 @@ export function Tr({ children, className, onClick }: { children: ReactNode; clas
   );
 }
 
-export function Td({ children, className }: { children: ReactNode; className?: string }) {
-  return <td className={cn('px-4 py-3 text-gray-700', className)}>{children}</td>;
+export function Td({ children, className, colSpan }: { children: ReactNode; className?: string; colSpan?: number }) {
+  return <td colSpan={colSpan} className={cn('px-4 py-3 text-gray-700', className)}>{children}</td>;
 }

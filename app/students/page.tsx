@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -119,7 +119,7 @@ export default function StudentsPage() {
               <div className="flex items-center gap-3 flex-wrap w-full">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <input type="text" placeholder="Search by name, admission noâ€¦" className="flex-1 text-sm outline-none bg-transparent text-gray-700"
+                  <input type="text" placeholder="Search by name, admission no…" className="flex-1 text-sm outline-none bg-transparent text-gray-700"
                     value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
                 </div>
                 <Select value={filterClass} onChange={(e) => { setFilterClass(e.target.value); setPage(1); }}
@@ -135,15 +135,15 @@ export default function StudentsPage() {
                   </tr></Thead>
                   <Tbody>
                     {students.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={9 as never}>No students found</Td></Tr>
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={9}>No students found</Td></Tr>
                       : students.map((s) => (
                         <Tr key={s.id}>
                           <Td><div className="font-medium text-gray-900">{s.name}</div><div className="text-xs text-gray-400">{s.email}</div></Td>
-                          <Td className="text-gray-600 font-mono text-xs">{s.admission_no || 'â€”'}</Td>
-                          <Td className="text-gray-600">{s.roll_no || 'â€”'}</Td>
-                          <Td className="text-gray-600">{s.class?.name ? `${s.class.name}${s.section?.name ? ' â€“ ' + s.section.name : ''}` : 'â€”'}</Td>
-                          <Td className="capitalize text-gray-600">{s.gender || 'â€”'}</Td>
-                          <Td className="text-gray-600">{s.phone || 'â€”'}</Td>
+                          <Td className="text-gray-600 font-mono text-xs">{s.admission_no || '—'}</Td>
+                          <Td className="text-gray-600">{s.roll_no || '—'}</Td>
+                          <Td className="text-gray-600">{s.class?.name ? `${s.class.name}${s.section?.name ? ' – ' + s.section.name : ''}` : '—'}</Td>
+                          <Td className="capitalize text-gray-600">{s.gender || '—'}</Td>
+                          <Td className="text-gray-600">{s.phone || '—'}</Td>
                           <Td className="text-gray-600">{formatDate(s.admission_date)}</Td>
                           <Td><Badge variant={statusVariant(s.status)}>{s.status}</Badge></Td>
                           <Td>

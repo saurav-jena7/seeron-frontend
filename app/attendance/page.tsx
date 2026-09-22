@@ -60,7 +60,7 @@ export default function AttendancePage() {
       .finally(() => setLoading(false));
   }, [selClass, selSection]);
 
-  // Load existing attendance for the selected date
+  // Load existing attendance for the selected date — re-runs when date, class, section, or student list changes
   useEffect(() => {
     if (!selClass || !date || students.length === 0) return;
     api.get('/attendance', { params: { class_id: selClass, section_id: selSection || undefined, date } })
@@ -76,7 +76,7 @@ export default function AttendancePage() {
           });
         }
       });
-  }, [date, students]);
+  }, [date, selClass, selSection, students]);
 
   function setStatus(studentId: string, status: AttStatus) {
     setRecords((prev) => ({ ...prev, [studentId]: { ...prev[studentId], status } }));
@@ -108,7 +108,7 @@ export default function AttendancePage() {
   const counts = Object.values(records).reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {} as Record<string, number>);
 
   return (
-    <AuthGuard anyPermission={['academic.view']}>
+    <AuthGuard anyPermission={['attendance.view', 'attendance.create']}>
       <AppShell title="Attendance">
         <div className="space-y-5">
           <div className="flex items-center justify-between flex-wrap gap-3">

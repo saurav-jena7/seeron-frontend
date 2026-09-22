@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -85,7 +85,7 @@ export default function SubjectsPage() {
                 <FileText className="w-5 h-5 text-indigo-600" /> Subjects
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                {subjects.length} subjects · {teachers.length} eligible teachers
+                {subjects.length} subjects � {teachers.length} eligible teachers
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function SubjectsPage() {
 
           {/* Step guide */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Academic Setup — Step 1</p>
+            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Academic Setup � Step 1</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-600">
               {[
                 { step: '1', label: 'Create subjects here', done: subjects.length > 0 },
@@ -112,7 +112,7 @@ export default function SubjectsPage() {
                 <div key={s.step} className={`flex items-center gap-2 p-2 rounded-xl ${s.done ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'}`}>
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.done ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'}`}>{s.step}</span>
                   <span>{s.label}</span>
-                  {s.done && <span className="ml-auto text-green-600">✓</span>}
+                  {s.done && <span className="ml-auto text-green-600">?</span>}
                 </div>
               ))}
             </div>
@@ -133,8 +133,8 @@ export default function SubjectsPage() {
                   </Thead>
                   <Tbody>
                     {subjects.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 4 as never : 3 as never}>
-                          No subjects yet{isAdmin && <> — <button onClick={openAdd} className="text-indigo-600 hover:underline">add the first one</button></>}
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 4 : 3}>
+                          No subjects yet{isAdmin && <> � <button onClick={openAdd} className="text-indigo-600 hover:underline">add the first one</button></>}
                         </Td></Tr>
                       : subjects.map(s => (
                         <Tr key={s.id}>
@@ -146,7 +146,7 @@ export default function SubjectsPage() {
                               <span className="font-medium text-gray-900">{s.name}</span>
                             </div>
                           </Td>
-                          <Td className="text-gray-500 font-mono text-xs">{s.code || '—'}</Td>
+                          <Td className="text-gray-500 font-mono text-xs">{s.code || '�'}</Td>
                           <Td><Badge variant={typeVariant(s.type)}>{s.type}</Badge></Td>
                           {isAdmin && (
                             <Td>
@@ -209,7 +209,7 @@ export default function SubjectsPage() {
                   { value: 'elective',  label: 'Elective' },
                 ]} />
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-                <p className="font-semibold mb-1">💡 Teacher Assignment</p>
+                <p className="font-semibold mb-1">?? Teacher Assignment</p>
                 <p>To assign a teacher to this subject for a specific class, go to <strong>Assign to Classes</strong> after creating the subject. A teacher must belong to this institute.</p>
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">

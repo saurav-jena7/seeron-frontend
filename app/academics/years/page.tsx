@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -95,7 +95,7 @@ export default function AcademicYearsPage() {
                 <Calendar className="w-5 h-5 text-indigo-600" /> Academic Years
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Define the academic calendar. Only one year is active ("Current") at a time —
+                Define the academic calendar. Only one year is active ("Current") at a time �
                 students, attendance, and fees are scoped to it.
               </p>
             </div>
@@ -108,10 +108,10 @@ export default function AcademicYearsPage() {
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm text-indigo-800">
             <p className="font-medium mb-1">What is an Academic Year?</p>
             <p className="text-indigo-700 text-xs leading-relaxed">
-              An academic year defines the date range for a school term (e.g. <strong>2025–2026</strong>,
-              April 2025 – March 2026). The <strong>Current</strong> year is used automatically when
+              An academic year defines the date range for a school term (e.g. <strong>2025�2026</strong>,
+              April 2025 � March 2026). The <strong>Current</strong> year is used automatically when
               admitting students, recording attendance, and assigning fees.
-              Only one year can be active at a time — setting a new one deactivates the previous.
+              Only one year can be active at a time � setting a new one deactivates the previous.
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export default function AcademicYearsPage() {
                   <Tbody>
                     {years.length === 0 ? (
                       <Tr>
-                        <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 5 as never : 4 as never}>
+                        <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 5 : 4}>
                           No academic years defined yet
                         </Td>
                       </Tr>
@@ -151,7 +151,7 @@ export default function AcademicYearsPage() {
                         {isAdmin && (
                           <Td>
                             <div className="flex items-center gap-1">
-                              {/* Set as current — only shown for inactive years */}
+                              {/* Set as current � only shown for inactive years */}
                               {!y.is_current && (
                                 <button
                                   onClick={() => setCurrent(y)}

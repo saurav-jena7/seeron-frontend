@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -108,10 +108,10 @@ export default function SectionsPage() {
                   </Thead>
                   <Tbody>
                     {sections.length === 0
-                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 5 as never : 4 as never}>No sections found</Td></Tr>
+                      ? <Tr><Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 5 : 4}>No sections found</Td></Tr>
                       : sections.map((s) => (
                         <Tr key={s.id}>
-                          <Td className="font-medium text-gray-900">{s.class?.name ?? '—'} — {s.name}</Td>
+                          <Td className="font-medium text-gray-900">{s.class?.name ?? '—'} – {s.name}</Td>
                           <Td className="text-gray-600">{s.class?.name ?? '—'}</Td>
                           <Td className="text-gray-600">{s.capacity}</Td>
                           <Td className="text-gray-600">{s.teacher?.name || '—'}</Td>

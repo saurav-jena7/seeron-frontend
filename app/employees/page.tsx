@@ -17,8 +17,8 @@ import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react';
 
 interface Employee {
   id: string; name: string; employee_code: string; designation: string;
-  department: string; gender: string; joining_date: string; phone: string;
-  email: string; salary: number; employment_type: string; is_teacher: number;
+  department: string; gender: string; dob: string; joining_date: string; phone: string;
+  email: string; address: string; salary: number; employment_type: string; is_teacher: number;
 }
 
 const emptyForm = {
@@ -57,8 +57,8 @@ export default function EmployeesPage() {
     setForm({
       name: emp.name, employee_code: emp.employee_code || '',
       designation: emp.designation || '', department: emp.department || '',
-      gender: emp.gender || '', dob: '', joining_date: emp.joining_date || '',
-      phone: emp.phone || '', email: emp.email || '', address: '',
+      gender: emp.gender || '', dob: emp.dob || '', joining_date: emp.joining_date || '',
+      phone: emp.phone || '', email: emp.email || '', address: emp.address || '',
       salary: emp.salary?.toString() || '', employment_type: emp.employment_type || 'full_time',
       is_teacher: !!emp.is_teacher,
     });
@@ -127,7 +127,7 @@ export default function EmployeesPage() {
                   </tr></Thead>
                   <Tbody>
                     {employees.length === 0 ? (
-                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={9 as never}>No employees found</Td></Tr>
+                      <Tr><Td className="text-center text-gray-400 py-8" colSpan={9}>No employees found</Td></Tr>
                     ) : employees.map((emp) => (
                       <Tr key={emp.id}>
                         <Td><div className="font-medium text-gray-900">{emp.name}</div><div className="text-xs text-gray-400">{emp.email}</div></Td>

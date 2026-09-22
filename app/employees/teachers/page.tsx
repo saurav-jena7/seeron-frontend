@@ -68,7 +68,7 @@ export default function TeachersPage() {
                   <Tbody>
                     {teachers.length === 0 ? (
                       <Tr>
-                        <Td className="text-center text-gray-400 py-8" colSpan={7 as never}>
+                        <Td className="text-center text-gray-400 py-8" colSpan={7}>
                           No teachers found
                         </Td>
                       </Tr>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
@@ -16,7 +16,7 @@ import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 
 interface Class { id: string; name: string; level: number; }
 
-/** Auto-extract a numeric level from the class name, e.g. "Class 10" → 10 */
+/** Auto-extract a numeric level from the class name, e.g. "Class 10" ? 10 */
 function extractLevel(name: string): number | undefined {
   const match = name.match(/\d+/);
   return match ? parseInt(match[0]) : undefined;
@@ -48,7 +48,7 @@ export default function ClassesPage() {
     if (!name.trim()) { toast.error('Class name is required'); return; }
     setSaving(true);
     try {
-      // Level is auto-derived from the name — no manual input needed
+      // Level is auto-derived from the name � no manual input needed
       const level = extractLevel(name);
       if (editing) await api.put(`/academics/classes/${editing.id}`, { name: name.trim(), level });
       else         await api.post('/academics/classes', { name: name.trim(), level });
@@ -93,8 +93,8 @@ export default function ClassesPage() {
                   <Tbody>
                     {classes.length === 0
                       ? <Tr>
-                          <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 2 as never : 1 as never}>
-                            No classes found{isAdmin && <> — <button onClick={openAdd} className="text-indigo-600 hover:underline ml-1">add one</button></>}
+                          <Td className="text-center text-gray-400 py-8" colSpan={isAdmin ? 2 : 1}>
+                            No classes found{isAdmin && <> � <button onClick={openAdd} className="text-indigo-600 hover:underline ml-1">add one</button></>}
                           </Td>
                         </Tr>
                       : classes.map(c => (
