@@ -19,9 +19,11 @@ import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 
 interface Student {
   id: string; name: string; admission_no: string; roll_no: string;
-  gender: string; dob: string; phone: string; email: string;
+  gender: string; dob: string; blood_group: string; phone: string; email: string;
+  address: string; parent_name: string; parent_phone: string; parent_email: string;
   class: { id: string; name: string } | null;
   section: { id: string; name: string } | null;
+  academic_year: { id: string; name: string } | null;
   status: string; admission_date: string;
 }
 interface Class { id: string; name: string; }
@@ -90,16 +92,23 @@ export default function StudentsPage() {
   function openEdit(s: Student) {
     setEditing(s);
     setForm({
-      ...emptyForm,
-      name: s.name,
-      admission_no: s.admission_no || '',
-      roll_no: s.roll_no || '',
-      gender: s.gender || '',
-      phone: s.phone || '',
-      email: s.email || '',
-      class_id: s.class?.id || '',
-      section_id: s.section?.id || '',
-      status: s.status || 'active',
+      name:             s.name             || '',
+      admission_no:     s.admission_no     || '',
+      roll_no:          s.roll_no          || '',
+      gender:           s.gender           || '',
+      dob:              s.dob              || '',
+      blood_group:      s.blood_group      || '',
+      phone:            s.phone            || '',
+      email:            s.email            || '',
+      address:          s.address          || '',
+      parent_name:      s.parent_name      || '',
+      parent_phone:     s.parent_phone     || '',
+      parent_email:     s.parent_email     || '',
+      class_id:         s.class?.id        || '',
+      section_id:       s.section?.id      || '',
+      academic_year_id: s.academic_year?.id || '',
+      admission_date:   s.admission_date   || '',
+      status:           s.status           || 'active',
     });
     setOpen(true);
   }
