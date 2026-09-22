@@ -43,14 +43,17 @@ export default function StudentDetailPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [sr, fr, ar] = await Promise.all([
-          api.get(`/students/${id}`),
-          api.get(`/fees/summary/${id}`),
-          api.get(`/attendance/report/${id}`),
-        ]);
+        // Load student first — if this 404s/403s, show error
+        const sr = await api.get(`/students/${id}`);
         setStudent(sr.data.data);
-        setFees(fr.data.data);
-        setAttendance(ar.data.data);
+
+        // Load fees and attendance independently — failures are non-fatal
+        const [fr, ar] = await Promise.all([
+          api.get(`/fees/summary/${id}`).catch(() => null),
+          api.get(`/attendance/report/${id}`).catch(() => null),
+        ]);
+        if (fr) setFees(fr.data.data);
+        if (ar) setAttendance(ar.data.data);
       } catch {}
       setLoading(false);
     }

@@ -68,9 +68,9 @@ export default function StudentsPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/academics/classes'),
-      api.get('/academics/sections'),
-      api.get('/academics/years'),
+      api.get('/academics/classes').catch(() => ({ data: { data: [] } })),
+      api.get('/academics/sections').catch(() => ({ data: { data: [] } })),
+      api.get('/academics/years').catch(() => ({ data: { data: [] } })),
     ]).then(([cr, sr, yr]) => {
       setClasses(cr.data.data || []);
       setSections(sr.data.data || []);
