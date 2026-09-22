@@ -19,7 +19,7 @@ import { getAuthContext, hasPermission, isSuperAdmin } from '@/lib/auth';
 
 interface Student {
   id: string; name: string; admission_no: string; roll_no: string;
-  gender: string; phone: string; email: string;
+  gender: string; dob: string; phone: string; email: string;
   class: { id: string; name: string } | null;
   section: { id: string; name: string } | null;
   status: string; admission_date: string;
@@ -106,6 +106,10 @@ export default function StudentsPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!form.admission_no.trim()) { toast.error('Admission No is required'); return; }
+    if (!form.roll_no.trim())      { toast.error('Roll No is required'); return; }
+    if (!form.class_id)            { toast.error('Class is required'); return; }
+    if (!form.admission_date)      { toast.error('Admission Date is required'); return; }
     setSaving(true);
     try {
       if (editing) await api.put(`/students/${editing.id}`, form);
@@ -188,6 +192,9 @@ export default function StudentsPage() {
                         <Td>
                           <div className="font-medium text-gray-900">{s.name}</div>
                           <div className="text-xs text-gray-400">{s.email}</div>
+                          {s.dob && (
+                            <div className="text-xs text-gray-400">DOB: {formatDate(s.dob)}</div>
+                          )}
                         </Td>
                         <Td className="text-gray-600 font-mono text-xs">{s.admission_no || '--'}</Td>
                         <Td className="text-gray-600">{s.roll_no || '--'}</Td>
@@ -252,9 +259,9 @@ export default function StudentsPage() {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Personal Details</p>
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Full Name *" value={form.name} onChange={(e) => f('name', e.target.value)} required />
-                <Input label="Admission No" value={form.admission_no} onChange={(e) => f('admission_no', e.target.value)} />
-                <Input label="Roll No" value={form.roll_no} onChange={(e) => f('roll_no', e.target.value)} />
-                <Select label="Gender" value={form.gender} onChange={(e) => f('gender', e.target.value)}
+                <Input label="Admission No *" value={form.admission_no} onChange={(e) => f('admission_no', e.target.value)} required placeholder="e.g. ADM2024001" />
+                <Input label="Roll No *" value={form.roll_no} onChange={(e) => f('roll_no', e.target.value)} required placeholder="e.g. 01" />
+                <Select label="Gender *" value={form.gender} onChange={(e) => f('gender', e.target.value)}
                   options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'other', label: 'Other' }]}
                   placeholder="Select gender" />
                 <Input label="Date of Birth" type="date" value={form.dob} onChange={(e) => f('dob', e.target.value)} />
@@ -268,7 +275,7 @@ export default function StudentsPage() {
 
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Academic Details</p>
               <div className="grid grid-cols-2 gap-3">
-                <Select label="Class" value={form.class_id}
+                <Select label="Class *" value={form.class_id}
                   onChange={(e) => setForm(p => ({ ...p, class_id: e.target.value, section_id: '' }))}
                   options={classes.map((c) => ({ value: c.id, label: c.name }))}
                   placeholder="Select class" />
@@ -276,12 +283,12 @@ export default function StudentsPage() {
                   onChange={(e) => f('section_id', e.target.value)}
                   options={filteredSections.map((s) => ({ value: s.id, label: s.name }))}
                   placeholder="Select section" />
-                <Select label="Academic Year" value={form.academic_year_id}
+                <Select label="Academic Year *" value={form.academic_year_id}
                   onChange={(e) => f('academic_year_id', e.target.value)}
                   options={years.map((y) => ({ value: y.id, label: y.name }))}
                   placeholder="Select year" />
-                <Input label="Admission Date" type="date" value={form.admission_date}
-                  onChange={(e) => f('admission_date', e.target.value)} />
+                <Input label="Admission Date *" type="date" value={form.admission_date}
+                  onChange={(e) => f('admission_date', e.target.value)} required />
                 <Select label="Status" value={form.status} onChange={(e) => f('status', e.target.value)}
                   options={[
                     { value: 'active',      label: 'Active' },

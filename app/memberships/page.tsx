@@ -1,4 +1,4 @@
-use client';
+'use client';
 import { useEffect, useState, FormEvent, useCallback } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import AuthGuard from '@/components/layout/AuthGuard';
