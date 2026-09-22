@@ -128,7 +128,6 @@ export default function MembershipsPage() {
     if (editPassword && editPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
     setSaving(true);
     try {
-      // Single call with all changes
       await api.put(`/memberships/${editing.id}`, {
         roleIds:     editRoleIds,
         userName:    editName.trim() !== editing.user?.name ? editName.trim() : undefined,
@@ -136,6 +135,21 @@ export default function MembershipsPage() {
       });
       toast.success('Member updated');
       setEditOpen(false);
+      // Optimistically update the member in local state so password column
+      // reflects the new value immediately without waiting for re-fetch
+      if (editPassword || editName.trim() !== editing.user?.name) {
+        setMembers(prev => prev.map(m => {
+          if (m.id !== editing.id) return m;
+          return {
+            ...m,
+            user: {
+              ...m.user,
+              name:           editName.trim() || m.user.name,
+              plain_password: editPassword    || m.user.plain_password,
+            },
+          };
+        }));
+      }
       load();
     } catch (err) { toast.error(getApiError(err)); }
     setSaving(false);
