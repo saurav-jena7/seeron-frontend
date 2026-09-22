@@ -25,7 +25,7 @@ interface Student {
   status: string; admission_date: string;
 }
 interface Class { id: string; name: string; }
-interface Section { id: string; name: string; class_id: string; }
+interface Section { id: string; name: string; class: { id: string; name: string } | null; }
 interface AcademicYear { id: string; name: string; is_current: number; }
 
 const emptyForm = {
@@ -68,7 +68,8 @@ export default function StudentsPage() {
 
   useEffect(() => { load(); }, [page, search, filterClass]);
 
-  const filteredSections = sections.filter((s) => s.class_id === form.class_id);
+  // filter sections whose populated class.id matches the selected class
+  const filteredSections = sections.filter((s) => s.class?.id === form.class_id);
 
   function openAdd() { setEditing(null); setForm({ ...emptyForm, academic_year_id: years.find((y) => y.is_current)?.id || '' }); setOpen(true); }
   function openEdit(s: Student) {
@@ -194,7 +195,8 @@ export default function StudentsPage() {
 
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Academic Details</p>
             <div className="grid grid-cols-2 gap-3">
-              <Select label="Class" value={form.class_id} onChange={(e) => f('class_id', e.target.value)}
+              <Select label="Class" value={form.class_id}
+                onChange={(e) => setForm(p => ({ ...p, class_id: e.target.value, section_id: '' }))}
                 options={classes.map((c) => ({ value: c.id, label: c.name }))} placeholder="Select class" />
               <Select label="Section" value={form.section_id} onChange={(e) => f('section_id', e.target.value)}
                 options={filteredSections.map((s) => ({ value: s.id, label: s.name }))} placeholder="Select section" />
